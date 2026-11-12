@@ -18,7 +18,8 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 
 | Path | What it is |
 |---|---|
-| `index.html`, `newtab.html`, `paroxysm.css` | The interface |
+| `index.html`, `newtab.html`, `settings.html`, `paroxysm.css` | The interface (browser shell, new tab page, settings page) |
+| `newtab-bg.js` | The new tab background: a small original WebGL shader, no libraries |
 | `fonts/`, `assets/` | Inter Tight (variable, latin) and the placeholder icon |
 | `scramjet/`, `controller/`, `epoxy/`, `sw.js` | Proxy engine. Protected: do not edit |
 | `protected.sha256`, `verify_protected.py` | Byte-for-byte check of the protected files |
@@ -26,9 +27,9 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 
 Check the protected files at any time with `python verify_protected.py`.
 
-## Settings
+## Configuration
 
-The wisp server list is `WISP_SERVERS` near the top of the script in `index.html`. The search engine is the `SEARCH_URL` line next to it.
+The wisp server list is `WISP_SERVERS` near the top of the script in `index.html`. The search engine is the `SEARCH_URL` line next to it. The accent colour is `--accent` in `paroxysm.css`. Settings opens as a tab (`paroxysm://settings`) from the sidebar.
 
 ## Licenses
 
