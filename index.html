@@ -18,21 +18,16 @@
         <symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
         <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol>
         <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
-        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
-        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+        <symbol id="i-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol>
     </svg>
 
-    <div class="tab-bar" id="tabBar">
-        <button class="new-tab-btn" id="newTabBtn" title="New tab">
-            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
-            <span>New tab</span>
-        </button>
-    </div>
-
-    <div class="toolbar">
-        <button class="nav-btn" id="backBtn" title="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
-        <button class="nav-btn" id="forwardBtn" title="Forward"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-        <button class="nav-btn" id="reloadBtn" title="Reload"><svg class="icon" aria-hidden="true"><use href="#i-rotate-cw"/></svg></button>
+    <header class="toolbar">
+        <div class="toolbar-left">
+            <button class="nav-btn" id="railToggle" title="Toggle sidebar"><svg class="icon" aria-hidden="true"><use href="#i-panel-left"/></svg></button>
+            <button class="nav-btn" id="backBtn" title="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+            <button class="nav-btn" id="forwardBtn" title="Forward"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+            <button class="nav-btn" id="reloadBtn" title="Reload"><svg class="icon" aria-hidden="true"><use href="#i-rotate-cw"/></svg></button>
+        </div>
 
         <div class="url-bar">
             <input type="text" id="urlInput" placeholder="Search or enter address"
@@ -40,37 +35,23 @@
             <button class="go-btn" id="goBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
         </div>
 
-        <div class="toolbar-right">
-            <button class="nav-btn" id="browserSettingsBtn" title="Settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></button>
+        <div class="toolbar-right"></div>
+    </header>
+
+    <aside class="rail">
+        <div class="tab-bar" id="tabBar">
+            <button class="new-tab-btn" id="newTabBtn" title="New tab">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+                <span>New tab</span>
+            </button>
         </div>
-    </div>
+        <button class="rail-link" id="browserSettingsBtn" title="Settings">
+            <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
+            <span>Settings</span>
+        </button>
+    </aside>
 
     <div class="frames" id="frames"></div>
-
-    <!-- Wisp server dialog (opened from settings) -->
-    <div class="server-modal-bg" id="serverModalBg" style="display:none"></div>
-    <div class="server-modal" id="serverModal" style="display:none" role="dialog" aria-label="Wisp server">
-        <div class="server-modal-head">
-            <div class="server-modal-title-row">
-                <span class="server-modal-title">Wisp server</span>
-                <button class="server-modal-info-btn" id="serverModalInfoBtn" title="What is a wisp server?">
-                    <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
-                </button>
-            </div>
-            <button class="server-modal-close" id="serverModalClose" title="Close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-        </div>
-        <div class="server-modal-list" id="serverModalList"></div>
-        <div class="server-modal-info" id="serverModalInfo">
-            <button class="server-modal-back" id="serverModalBack">
-                <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
-                Back
-            </button>
-            <p class="server-modal-info-text">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. Basically it means that if a server is not active, the web proxy simply doesn't work!</p>
-        </div>
-        <div class="server-modal-foot">
-            <button class="check-btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
-        </div>
-    </div>
 
     <div class="pill" id="pill" role="status" aria-live="polite"></div>
 
@@ -89,21 +70,19 @@
         ];
         let activeServerIdx = 0;
 
-        const LOCAL_SCHEME    = "paroxysm://";
-        const LOCAL_PAGES     = ["newtab"];
-        const DEFAULT_FAVICON = "assets/paroxysm-icon.svg";
-        const SEARCH_URL      = "https://www.google.com/search?q="; // change this line to switch search engine
+        const LOCAL_SCHEME     = "paroxysm://";
+        const LOCAL_PAGES      = ["newtab", "settings"];
+        const SETTINGS_URL     = LOCAL_SCHEME + "settings";
+        const DEFAULT_FAVICON  = "assets/paroxysm-icon.svg";
+        const SETTINGS_FAVICON = "assets/settings.svg";
+        const SEARCH_URL       = "https://www.google.com/search?q="; // change this line to switch search engine
 
         const tabBar        = document.getElementById("tabBar");
         const newTabBtn     = document.getElementById("newTabBtn");
         const framesEl      = document.getElementById("frames");
         const urlInput      = document.getElementById("urlInput");
         const pillEl        = document.getElementById("pill");
-        const checkBtn      = document.getElementById("checkBtn");
-        const serverModalBg   = document.getElementById("serverModalBg");
-        const serverModal     = document.getElementById("serverModal");
-        const serverModalList = document.getElementById("serverModalList");
-        const serverModalInfo = document.getElementById("serverModalInfo");
+        const settingsBtn   = document.getElementById("browserSettingsBtn");
 
         let scramjet = null;
         let ready = false;
@@ -138,80 +117,36 @@
             else                        hidePill();                                          // connecting / ready
         }
 
-        // ── Server picker ──────────────────────────────────────────────────────
-        function openServerPicker() {
-            serverModalList.innerHTML = "";
-            WISP_SERVERS.forEach((srv, i) => {
-                const item = document.createElement("button");
-                item.className = "server-item" + (i === activeServerIdx ? " active" : "");
-                let badge = "";
-                if (i === activeServerIdx) {
-                    if (ready) {
-                        badge = '<span class="server-item-badge">Active</span>';
-                    } else {
-                        badge = '<span class="server-item-badge not-ready">Connecting…</span>';
-                    }
-                }
-                item.innerHTML = `
-                    <span class="server-item-name">${srv.name}</span>
-                    ${badge}
-                `;
-                item.addEventListener("click", () => {
-                    if (i === activeServerIdx) { closeServerPicker(); return; }
-                    activeServerIdx = i;
-                    closeServerPicker();
-                    scramjet = null;
-                    ready = false;
-                    init();
-                });
-                serverModalList.appendChild(item);
-            });
-            serverModal.style.display = "";
-            serverModalBg.style.display = "";
+        // ── Settings API ───────────────────────────────────────────────────────
+        // settings.html (same origin) reads and drives the wisp server through this object.
+        function selectServer(i) {
+            if (i === activeServerIdx) return;
+            activeServerIdx = i;
+            scramjet = null;
+            ready = false;
+            init();
         }
 
-        function closeServerPicker() {
-            serverModal.style.display = "none";
-            serverModalBg.style.display = "none";
-            // Reset to list view for next open
-            serverModalList.classList.remove("hide");
-            serverModalInfo.classList.remove("show");
-        }
-
-        function showServerInfo() {
-            serverModalList.classList.add("hide");
-            serverModalInfo.classList.add("show");
-        }
-
-        function hideServerInfo() {
-            serverModalInfo.classList.remove("show");
-            serverModalList.classList.remove("hide");
-        }
-
-        // ── Manual connection check ────────────────────────────────────────────
         async function checkConnection() {
             const srv = WISP_SERVERS[activeServerIdx];
-            const label = checkBtn.querySelector("span");
-            checkBtn.disabled = true;
-            label.textContent = "Checking…";
             const t0 = performance.now();
             try {
                 await probeWisp(srv.url);
                 showPill("ok", `${srv.name} is reachable (${Math.round(performance.now() - t0)} ms)`);
+                return true;
             } catch (e) {
                 showPill("warn", `Can't reach ${srv.name}: ${e.message}`, 6000);
-            } finally {
-                checkBtn.disabled = false;
-                label.textContent = "Check connection";
+                return false;
             }
         }
 
-        document.getElementById("browserSettingsBtn").addEventListener("click", openServerPicker);
-        checkBtn.addEventListener("click", checkConnection);
-        document.getElementById("serverModalClose").addEventListener("click", closeServerPicker);
-        document.getElementById("serverModalInfoBtn").addEventListener("click", showServerInfo);
-        document.getElementById("serverModalBack").addEventListener("click", hideServerInfo);
-        serverModalBg.addEventListener("click", closeServerPicker);
+        window.paroxysm = {
+            servers:     () => WISP_SERVERS.map(s => ({ name: s.name, url: s.url })),
+            activeIndex: () => activeServerIdx,
+            isReady:     () => ready,
+            selectServer,
+            checkConnection
+        };
 
         // ── Helpers ────────────────────────────────────────────────────────────
         function norm(u) {
@@ -299,6 +234,15 @@
 
         function syncTabBarActive() {
             tabs.forEach(t => t.tabEl?.classList.toggle("active", t.id === activeTabId));
+            settingsBtn.classList.toggle("active", getActiveTab()?.url === SETTINGS_URL);
+        }
+
+        // Settings is a real tab: focus it if it is already open, otherwise open one.
+        function openSettings() {
+            const existing = tabs.find(t => t.url === SETTINGS_URL);
+            if (existing) { switchTab(existing.id); return; }
+            createTab();
+            go(SETTINGS_URL);
         }
 
         // ── Tab lifecycle ──────────────────────────────────────────────────────
@@ -395,8 +339,9 @@
                 tab.frame = null;
                 urlInput.value = input;
                 tab.url = input;
-                updateTabTitle(tab, "New tab");
-                tab.faviconEl.src = DEFAULT_FAVICON;
+                syncTabBarActive();
+                updateTabTitle(tab, page === "settings" ? "Settings" : "New tab");
+                tab.faviconEl.src = page === "settings" ? SETTINGS_FAVICON : DEFAULT_FAVICON;
                 tab.iframe.src = `${page}.html`;
                 return;
             }
@@ -405,6 +350,7 @@
             if (!url) return;
             urlInput.value = url;
             tab.url = url;
+            syncTabBarActive();
             updateTabTitle(tab, url);
             updateTabFavicon(tab, url);
             if (!tab.frame) {
@@ -424,6 +370,18 @@
         document.getElementById("forwardBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
         document.getElementById("reloadBtn").onclick  = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
         newTabBtn.onclick = () => createTab();
+
+        settingsBtn.addEventListener("click", openSettings);
+
+        // sidebar: collapse to icons (remembered)
+        const RAIL_KEY = "paroxysm:rail-collapsed";
+        function setRailCollapsed(on) {
+            document.body.classList.toggle("rail-collapsed", on);
+            try { localStorage.setItem(RAIL_KEY, on ? "1" : "0"); } catch {}
+        }
+        try { if (localStorage.getItem(RAIL_KEY) === "1") setRailCollapsed(true); } catch {}
+        document.getElementById("railToggle").addEventListener("click",
+            () => setRailCollapsed(!document.body.classList.contains("rail-collapsed")));
 
         // ── New tab page messages ──────────────────────────────────────────────
         window.addEventListener("message", e => {

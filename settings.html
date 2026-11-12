@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="paroxysm.css">
+    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+</head>
+
+<body class="settings">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+    </svg>
+    <div class="settings-wrap">
+        <h1 class="page-title">Settings</h1>
+
+        <section class="card">
+            <h2 class="card-title">Wisp server</h2>
+            <p class="card-desc">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. If the server is not reachable, the web proxy doesn't work.</p>
+            <div class="server-list" id="serverList"></div>
+            <div class="card-actions">
+                <button class="btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // The shell (index.html) owns the proxy; this page only reads and drives it
+        // through window.parent.paroxysm.
+        const api = () => window.parent && window.parent.paroxysm;
+        const listEl = document.getElementById("serverList");
+        const checkBtn = document.getElementById("checkBtn");
+        let shown = "";
+
+        function render() {
+            const app = api();
+            if (!app) return;
+            const servers = app.servers();
+            const active = app.activeIndex();
+            const ready = app.isReady();
+            const signature = JSON.stringify([servers, active, ready]);
+            if (signature === shown) return;
+            shown = signature;
+
+            listEl.replaceChildren();
+            servers.forEach((srv, i) => {
+                const item = document.createElement("button");
+                item.className = "server-item" + (i === active ? " active" : "");
+                const name = document.createElement("span");
+                name.className = "server-item-name";
+                name.textContent = srv.name;
+                item.appendChild(name);
+                if (i === active) {
+                    const badge = document.createElement("span");
+                    badge.className = "server-item-badge" + (ready ? "" : " not-ready");
+                    badge.textContent = ready ? "Active" : "Connecting…";
+                    item.appendChild(badge);
+                }
+                item.addEventListener("click", () => { app.selectServer(i); render(); });
+                listEl.appendChild(item);
+            });
+        }
+
+        checkBtn.addEventListener("click", async () => {
+            const app = api();
+            if (!app) return;
+            const label = checkBtn.querySelector("span");
+            checkBtn.disabled = true;
+            label.textContent = "Checking…";
+            try { await app.checkConnection(); }
+            finally { checkBtn.disabled = false; label.textContent = "Check connection"; }
+        });
+
+        render();
+        setInterval(render, 1000);
+    </script>
+</body>
+
+</html>
