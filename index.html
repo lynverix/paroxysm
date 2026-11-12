@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>paroxysm</title>
+    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="paroxysm.css">
+    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+</head>
+
+<body class="browser">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+        <symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+    </svg>
+
+    <div class="tab-bar" id="tabBar">
+        <button class="new-tab-btn" id="newTabBtn" title="New tab">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg>
+            <span>New tab</span>
+        </button>
+    </div>
+
+    <div class="toolbar">
+        <button class="nav-btn" id="backBtn" title="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
+        <button class="nav-btn" id="forwardBtn" title="Forward"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        <button class="nav-btn" id="reloadBtn" title="Reload"><svg class="icon" aria-hidden="true"><use href="#i-rotate-cw"/></svg></button>
+
+        <div class="url-bar">
+            <input type="text" id="urlInput" placeholder="Search or enter address"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button class="go-btn" id="goBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+
+        <div class="toolbar-right">
+            <button class="nav-btn" id="browserSettingsBtn" title="Settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg></button>
+        </div>
+    </div>
+
+    <div class="frames" id="frames"></div>
+
+    <!-- Wisp server dialog (opened from settings) -->
+    <div class="server-modal-bg" id="serverModalBg" style="display:none"></div>
+    <div class="server-modal" id="serverModal" style="display:none" role="dialog" aria-label="Wisp server">
+        <div class="server-modal-head">
+            <div class="server-modal-title-row">
+                <span class="server-modal-title">Wisp server</span>
+                <button class="server-modal-info-btn" id="serverModalInfoBtn" title="What is a wisp server?">
+                    <svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>
+                </button>
+            </div>
+            <button class="server-modal-close" id="serverModalClose" title="Close"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+        </div>
+        <div class="server-modal-list" id="serverModalList"></div>
+        <div class="server-modal-info" id="serverModalInfo">
+            <button class="server-modal-back" id="serverModalBack">
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+                Back
+            </button>
+            <p class="server-modal-info-text">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. Basically it means that if a server is not active, the web proxy simply doesn't work!</p>
+        </div>
+        <div class="server-modal-foot">
+            <button class="check-btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
+        </div>
+    </div>
+
+    <div class="pill" id="pill" role="status" aria-live="polite"></div>
+
+    <script src="scramjet/scramjet.js"></script>
+    <script src="controller/controller.api.js"></script>
+    <script src="epoxy/index.js"></script>
+
+    <script>
+        const { Controller } = $scramjetController;
+        const { defaultConfig } = $scramjet;
+        const EpoxyTransport = self.EpoxyTransport.default;
+
+        //── Wisp servers — add yours here ─────────────────────────────────────
+        const WISP_SERVERS = [
+            { name: "Wisp Server 1", url: "wss://api.scvmath.org/wi/" },
+        ];
+        let activeServerIdx = 0;
+
+        const LOCAL_SCHEME    = "paroxysm://";
+        const LOCAL_PAGES     = ["newtab"];
+        const DEFAULT_FAVICON = "assets/paroxysm-icon.svg";
+        const SEARCH_URL      = "https://www.google.com/search?q="; // change this line to switch search engine
+
+        const tabBar        = document.getElementById("tabBar");
+        const newTabBtn     = document.getElementById("newTabBtn");
+        const framesEl      = document.getElementById("frames");
+        const urlInput      = document.getElementById("urlInput");
+        const pillEl        = document.getElementById("pill");
+        const checkBtn      = document.getElementById("checkBtn");
+        const serverModalBg   = document.getElementById("serverModalBg");
+        const serverModal     = document.getElementById("serverModal");
+        const serverModalList = document.getElementById("serverModalList");
+        const serverModalInfo = document.getElementById("serverModalInfo");
+
+        let scramjet = null;
+        let ready = false;
+
+        // ── Notifications ──────────────────────────────────────────────────────
+        // A small pill, shown only when there is something to report.
+        // There is no permanent connection indicator.
+        let pillTimer = null;
+
+        function showPill(kind, message, ms = 3500) {
+            clearTimeout(pillTimer);
+            pillEl.className = "pill show " + kind;
+            pillEl.textContent = message;
+            if (ms) pillTimer = setTimeout(hidePill, ms);
+        }
+
+        function hidePill() {
+            clearTimeout(pillTimer);
+            pillEl.classList.remove("show");
+        }
+
+        // ── Status ─────────────────────────────────────────────────────────────
+        // init() still reports through setStatus(); only problems are surfaced.
+        const STATUS_TEXT = {
+            "Not ready, wait...": "Can't reach the wisp server. Retrying…",
+            "Transport failed":   "The network transport failed to start."
+        };
+
+        function setStatus(state, message) {
+            if (state === "warn")       showPill("warn", STATUS_TEXT[message] ?? message, 0); // stays while retrying
+            else if (state === "error") showPill("error", STATUS_TEXT[message] ?? message, 10000);
+            else                        hidePill();                                          // connecting / ready
+        }
+
+        // ── Server picker ──────────────────────────────────────────────────────
+        function openServerPicker() {
+            serverModalList.innerHTML = "";
+            WISP_SERVERS.forEach((srv, i) => {
+                const item = document.createElement("button");
+                item.className = "server-item" + (i === activeServerIdx ? " active" : "");
+                let badge = "";
+                if (i === activeServerIdx) {
+                    if (ready) {
+                        badge = '<span class="server-item-badge">Active</span>';
+                    } else {
+                        badge = '<span class="server-item-badge not-ready">Connecting…</span>';
+                    }
+                }
+                item.innerHTML = `
+                    <span class="server-item-name">${srv.name}</span>
+                    ${badge}
+                `;
+                item.addEventListener("click", () => {
+                    if (i === activeServerIdx) { closeServerPicker(); return; }
+                    activeServerIdx = i;
+                    closeServerPicker();
+                    scramjet = null;
+                    ready = false;
+                    init();
+                });
+                serverModalList.appendChild(item);
+            });
+            serverModal.style.display = "";
+            serverModalBg.style.display = "";
+        }
+
+        function closeServerPicker() {
+            serverModal.style.display = "none";
+            serverModalBg.style.display = "none";
+            // Reset to list view for next open
+            serverModalList.classList.remove("hide");
+            serverModalInfo.classList.remove("show");
+        }
+
+        function showServerInfo() {
+            serverModalList.classList.add("hide");
+            serverModalInfo.classList.add("show");
+        }
+
+        function hideServerInfo() {
+            serverModalInfo.classList.remove("show");
+            serverModalList.classList.remove("hide");
+        }
+
+        // ── Manual connection check ────────────────────────────────────────────
+        async function checkConnection() {
+            const srv = WISP_SERVERS[activeServerIdx];
+            const label = checkBtn.querySelector("span");
+            checkBtn.disabled = true;
+            label.textContent = "Checking…";
+            const t0 = performance.now();
+            try {
+                await probeWisp(srv.url);
+                showPill("ok", `${srv.name} is reachable (${Math.round(performance.now() - t0)} ms)`);
+            } catch (e) {
+                showPill("warn", `Can't reach ${srv.name}: ${e.message}`, 6000);
+            } finally {
+                checkBtn.disabled = false;
+                label.textContent = "Check connection";
+            }
+        }
+
+        document.getElementById("browserSettingsBtn").addEventListener("click", openServerPicker);
+        checkBtn.addEventListener("click", checkConnection);
+        document.getElementById("serverModalClose").addEventListener("click", closeServerPicker);
+        document.getElementById("serverModalInfoBtn").addEventListener("click", showServerInfo);
+        document.getElementById("serverModalBack").addEventListener("click", hideServerInfo);
+        serverModalBg.addEventListener("click", closeServerPicker);
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+        function norm(u) {
+            if (!u) return "https://example.com";
+            return u.startsWith("http") ? u : "https://" + u;
+        }
+
+        function isUrl(str) {
+            return /^[^\s]+\.[^\s]+/.test(str) || str.startsWith("http");
+        }
+
+        function resolveInput(input) {
+            if (!input.trim()) return null;
+            if (isUrl(input)) return norm(input);
+            return SEARCH_URL + encodeURIComponent(input);
+        }
+
+        function getDomain(url) {
+            try { return new URL(url).hostname; } catch { return null; }
+        }
+
+        function getFaviconUrl(url) {
+            const domain = getDomain(url);
+            if (!domain) return null;
+            return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+        }
+
+        // The proxied URL follows "<origin><controller prefix><id>/<frame id>/".
+        // The prefix comes from the controller's own config instead of being hard-coded.
+        function proxiedUrlPattern() {
+            const prefix = $scramjetController.config?.prefix ?? "/~/sj/";
+            const escaped = prefix.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
+            return new RegExp("https?:\\/\\/[^/]+" + escaped + "[^/]+\\/[^/]+\\/(https?.+)");
+        }
+
+        function getActiveTab() {
+            return tabs.find(t => t.id === activeTabId) ?? null;
+        }
+
+        // ── Tab rendering ──────────────────────────────────────────────────────
+        function renderTab(tab) {
+            const el = document.createElement("div");
+            el.className = "tab" + (tab.id === activeTabId ? " active" : "");
+            el.dataset.id = tab.id;
+
+            const favicon = document.createElement("img");
+            favicon.className = "tab-favicon";
+            favicon.src = DEFAULT_FAVICON;
+            favicon.alt = "";
+            favicon.onerror = () => { favicon.onerror = null; favicon.src = DEFAULT_FAVICON; }; // lookup blocked or failed
+
+            const title = document.createElement("span");
+            title.className = "tab-title";
+            title.textContent = tab.title || "New tab";
+
+            const closeBtn = document.createElement("span");
+            closeBtn.className = "tab-close";
+            closeBtn.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>`;
+            closeBtn.title = "Close tab";
+            closeBtn.addEventListener("click", e => {
+                e.stopPropagation();
+                closeTab(tab.id);
+            });
+
+            el.appendChild(favicon);
+            el.appendChild(title);
+            el.appendChild(closeBtn);
+            el.addEventListener("click", () => switchTab(tab.id));
+
+            tab.tabEl = el;
+            tab.faviconEl = favicon;
+            tabBar.insertBefore(el, newTabBtn);
+        }
+
+        function updateTabTitle(tab, title) {
+            tab.title = title;
+            if (tab.tabEl) tab.tabEl.querySelector(".tab-title").textContent = title;
+        }
+
+        function updateTabFavicon(tab, url) {
+            if (!tab.faviconEl) return;
+            const faviconUrl = getFaviconUrl(url);
+            if (faviconUrl) tab.faviconEl.src = faviconUrl;
+        }
+
+        function syncTabBarActive() {
+            tabs.forEach(t => t.tabEl?.classList.toggle("active", t.id === activeTabId));
+        }
+
+        // ── Tab lifecycle ──────────────────────────────────────────────────────
+        const tabs = [];
+        let activeTabId = null;
+        let nextTabId   = 0;
+
+        function createTab(url = null) {
+            const id = nextTabId++;
+            const iframe = document.createElement("iframe");
+            iframe.title = "paroxysm";
+            framesEl.appendChild(iframe);
+
+            const tab = { id, iframe, frame: null, url: url || "newtab", title: "New tab", tabEl: null, faviconEl: null, _pollInterval: null };
+            tabs.push(tab);
+
+            renderTab(tab);
+            switchTab(id);
+
+            if (url && ready) {
+                attachFrame(tab, url);
+            } else if (!url) {
+                iframe.src = "newtab.html";
+            }
+
+            return tab;
+        }
+
+        function attachFrame(tab, url) {
+            tab.frame = scramjet.createFrame(tab.iframe);
+            tab.url = norm(url);
+            tab.frame.go(tab.url);
+            updateTabTitle(tab, tab.url);
+            updateTabFavicon(tab, tab.url);
+
+            if (tab._pollInterval) clearInterval(tab._pollInterval);
+            tab._pollInterval = setInterval(() => {
+                try {
+                    const doc = tab.iframe.contentDocument;
+                    const win = tab.iframe.contentWindow;
+                    if (!doc || !win) return;
+
+                    const raw = win.location.href;
+                    if (raw && raw !== "about:blank") {
+                        const match = raw.match(proxiedUrlPattern());
+                        const realUrl = match ? decodeURIComponent(match[1].split("?")[0]) : raw;
+                        if (realUrl !== tab.url) {
+                            tab.url = realUrl;
+                            updateTabFavicon(tab, realUrl);
+                            if (tab.id === activeTabId) urlInput.value = realUrl;
+                        }
+                    }
+
+                    const title = doc.title;
+                    if (title && title !== "Just a moment..." && title !== tab.title) {
+                        updateTabTitle(tab, title);
+                    }
+                } catch {}
+            }, 500);
+        }
+
+        function switchTab(id) {
+            activeTabId = id;
+            tabs.forEach(t => t.iframe.classList.toggle("active", t.id === id));
+            syncTabBarActive();
+            const tab = getActiveTab();
+            if (tab) {
+                urlInput.value = tab.url === "newtab" ? "" : tab.url.startsWith(LOCAL_SCHEME) ? tab.url : (tab.url || "");
+            }
+        }
+
+        function closeTab(id) {
+            const idx = tabs.findIndex(t => t.id === id);
+            if (idx === -1) return;
+            const tab = tabs[idx];
+            clearInterval(tab._pollInterval);
+            tab.iframe.remove();
+            tab.tabEl?.remove();
+            tabs.splice(idx, 1);
+            if (tabs.length === 0) { createTab(); return; }
+            if (activeTabId === id) switchTab(tabs[Math.min(idx, tabs.length - 1)].id);
+        }
+
+        // ── Navigation ─────────────────────────────────────────────────────────
+        function go(input) {
+            const tab = getActiveTab();
+            if (!tab) return;
+
+            if (input.startsWith(LOCAL_SCHEME)) {
+                const page = input.slice(LOCAL_SCHEME.length).split("/")[0];
+                if (!LOCAL_PAGES.includes(page)) return;
+                clearInterval(tab._pollInterval);
+                tab._pollInterval = null;
+                tab.frame = null;
+                urlInput.value = input;
+                tab.url = input;
+                updateTabTitle(tab, "New tab");
+                tab.faviconEl.src = DEFAULT_FAVICON;
+                tab.iframe.src = `${page}.html`;
+                return;
+            }
+
+            const url = resolveInput(input);
+            if (!url) return;
+            urlInput.value = url;
+            tab.url = url;
+            updateTabTitle(tab, url);
+            updateTabFavicon(tab, url);
+            if (!tab.frame) {
+                if (!ready) {
+                    showPill("warn", "Still connecting. The page will load once the wisp server is ready.", 4000);
+                    return;
+                }
+                attachFrame(tab, url);
+            } else {
+                tab.frame.go(url);
+            }
+        }
+
+        document.getElementById("goBtn").onclick = () => go(urlInput.value);
+        urlInput.addEventListener("keydown", e => { if (e.key === "Enter") go(urlInput.value); });
+        document.getElementById("backBtn").onclick    = () => getActiveTab()?.iframe?.contentWindow?.history.back();
+        document.getElementById("forwardBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
+        document.getElementById("reloadBtn").onclick  = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
+        newTabBtn.onclick = () => createTab();
+
+        // ── New tab page messages ──────────────────────────────────────────────
+        window.addEventListener("message", e => {
+            if (e.data?.type === "newtab-navigate") go(e.data.url);
+        });
+
+        // ── Init ───────────────────────────────────────────────────────────────
+        function probeWisp(url) {
+            return new Promise((resolve, reject) => {
+                let ws;
+                const timeout = setTimeout(() => {
+                    try { ws && ws.close(); } catch {}
+                    reject(new Error("Connection timed out"));
+                }, 8000);
+                try {
+                    ws = new WebSocket(url);
+                } catch (e) {
+                    clearTimeout(timeout);
+                    reject(e);
+                    return;
+                }
+                ws.onopen = () => {
+                    clearTimeout(timeout);
+                    ws.close();
+                    resolve();
+                };
+                ws.onerror = () => {
+                    clearTimeout(timeout);
+                    reject(new Error("WebSocket connection failed"));
+                };
+                ws.onclose = ev => {
+                    // If close fires before open, it failed
+                    if (ev.code !== 1000 && !ev.wasClean) {
+                        clearTimeout(timeout);
+                        reject(new Error(`Connection closed (code ${ev.code})`));
+                    }
+                };
+            });
+        }
+
+        async function init() {
+            try {
+                setStatus("init", "Connecting");
+                await navigator.serviceWorker.ready;
+
+                const serviceworker =
+                    navigator.serviceWorker.controller ??
+                    (await navigator.serviceWorker.ready).active;
+
+                const srv = WISP_SERVERS[activeServerIdx];
+                setStatus("init", `Connecting to ${srv.name}…`);
+
+                // Probe the Wisp server with a real WebSocket before trusting it
+                let connected = false;
+                while (!connected) {
+                    try {
+                        await probeWisp(srv.url);
+                        connected = true;
+                    } catch (e) {
+                        setStatus("warn", "Not ready, wait...");
+                        console.error("[paroxysm] wisp probe failed, retrying in 2s:", e);
+                        await new Promise(r => setTimeout(r, 2000));
+                    }
+                }
+
+                const transport = new EpoxyTransport({ wisp: srv.url });
+
+                try {
+                    await transport.init();
+                } catch (e) {
+                    setStatus("warn", "Transport failed");
+                    console.error("[paroxysm] wisp transport failed:", e);
+                    return;
+                }
+
+                scramjet = new Controller({
+                    serviceworker,
+                    transport,
+                    scramjetConfig: defaultConfig
+                });
+
+                await scramjet.wait();
+                ready = true;
+
+                tabs.forEach(tab => {
+                    if (!tab.frame && tab.url !== "newtab" && !tab.url.startsWith(LOCAL_SCHEME)) {
+                        attachFrame(tab, tab.url);
+                    }
+                });
+
+                setStatus("ready", "Ready");
+            } catch (e) {
+                console.error(e);
+                setStatus("error", e.message);
+            }
+        }
+
+        // ── Bootstrap ──────────────────────────────────────────────────────────
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js").then(() => {
+                createTab();
+                init();
+            });
+        } else {
+            setStatus("error", "No service worker support");
+        }
+    </script>
+</body>
+
+</html>

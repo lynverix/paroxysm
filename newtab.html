@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New tab</title>
+    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="paroxysm.css">
+    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+</head>
+
+<body class="newtab">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    </svg>
+
+    <h1 class="wordmark">paroxysm</h1>
+
+    <div class="search-container">
+        <div class="search-box">
+            <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
+            <input class="search-input" id="searchInput" type="text"
+                placeholder="Search or enter address"
+                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                autofocus>
+            <button class="search-btn" id="searchBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+        </div>
+    </div>
+
+    <script>
+        // The shell (index.html) resolves the text into a URL or a search,
+        // so there is a single place that decides how input is interpreted.
+        function navigate(query) {
+            query = query.trim();
+            if (!query) return;
+            window.parent.postMessage({ type: "newtab-navigate", url: query }, "*");
+        }
+
+        document.getElementById("searchBtn").onclick = () => navigate(document.getElementById("searchInput").value);
+        document.getElementById("searchInput").addEventListener("keydown", e => {
+            if (e.key === "Enter") navigate(e.target.value);
+        });
+    </script>
+</body>
+
+</html>
