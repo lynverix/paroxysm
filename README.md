@@ -1,6 +1,6 @@
 # paroxysm
 
-A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of the earlier mirage project.
+A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
 Status: UI redesign phase. The proxy engine is unchanged from mirage; the single-file `index.svg` launcher is planned and not built yet.
 
