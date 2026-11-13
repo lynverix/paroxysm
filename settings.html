@@ -7,75 +7,227 @@
     <title>Settings</title>
     <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
-    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_icon.ico" sizes="any">
+    <script src="paroxysm-settings.js"></script>
 </head>
 
 <body class="settings">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
     </svg>
-    <div class="settings-wrap">
-        <h1 class="page-title">Settings</h1>
+    <div class="settings-layout">
+        <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+            <h1 class="page-title">Settings</h1>
+            <button class="nav-item active" data-section="appearance">Appearance</button>
+            <button class="nav-item" data-section="search">Search</button>
+            <button class="nav-item" data-section="proxy">Proxy</button>
+            <button class="nav-item" data-section="about">About</button>
+        </nav>
 
-        <section class="card">
-            <h2 class="card-title">Wisp server</h2>
-            <p class="card-desc">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. If the server is not reachable, the web proxy doesn't work.</p>
-            <div class="server-list" id="serverList"></div>
-            <div class="card-actions">
-                <button class="btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
-            </div>
-        </section>
+        <main>
+            <!-- Appearance -->
+            <section class="settings-section active" id="sec-appearance">
+                <h2 class="section-title">Appearance</h2>
+                <div class="card">
+                    <h3 class="card-title">Accent color</h3>
+                    <p class="card-desc">Used for the selected tab, buttons and switches.</p>
+                    <div class="swatches" id="swatches"></div>
+                </div>
+                <div class="card">
+                    <div class="row">
+                        <div>
+                            <h3 class="card-title">Animated background</h3>
+                            <p class="hint" style="margin-top:4px">Slowly moving colour on the new tab page. Turn off for a still image.</p>
+                        </div>
+                        <button class="switch" id="animToggle" role="switch" aria-checked="true" aria-label="Animated background"></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search -->
+            <section class="settings-section" id="sec-search">
+                <h2 class="section-title">Search</h2>
+                <div class="card">
+                    <h3 class="card-title">Search engine</h3>
+                    <p class="card-desc">Used when you type something that isn't an address.</p>
+                    <div class="choices" id="engines"></div>
+                    <div class="custom-field" id="customField" hidden>
+                        <input class="text-input" id="customUrl" type="text" placeholder="https://example.com/search?q=%s" autocomplete="off" spellcheck="false">
+                        <p class="hint">Use %s where the search words go.</p>
+                    </div>
+                    <p class="hint">Only Google has been tested with the current Scramjet version. DuckDuckGo is known to need a newer one.</p>
+                </div>
+            </section>
+
+            <!-- Proxy -->
+            <section class="settings-section" id="sec-proxy">
+                <h2 class="section-title">Proxy</h2>
+                <div class="card">
+                    <h3 class="card-title">Wisp servers</h3>
+                    <p class="card-desc">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. paroxysm tries the endpoints below in order and uses the first one that responds, so you never need to pick one.</p>
+                    <p class="status-line" id="proxyStatus">Connecting…</p>
+                    <div class="server-list" id="serverList"></div>
+                    <div class="card-actions">
+                        <button class="btn primary" id="findBtn"><span>Find best server</span></button>
+                        <button class="btn" id="testBtn"><span>Test all endpoints</span></button>
+                        <button class="btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
+                    </div>
+                    <p class="hint">Endpoints are listed in <code>paroxysm.config.js</code>.</p>
+                </div>
+            </section>
+
+            <!-- About -->
+            <section class="settings-section" id="sec-about">
+                <h2 class="section-title">About</h2>
+                <div class="card">
+                    <h3 class="card-title">paroxysm</h3>
+                    <dl class="kv" style="margin-top:16px" id="aboutList"></dl>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Open source</h3>
+                    <ul class="credits">
+                        <li>Scramjet (AGPL-3.0), the proxy engine</li>
+                        <li>Epoxy transport over WISP</li>
+                        <li>Three.js (MIT), the new tab background</li>
+                        <li>Inter Tight (SIL OFL 1.1), the typeface</li>
+                        <li>Lucide (ISC), the icons</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
-        // The shell (index.html) owns the proxy; this page only reads and drives it
-        // through window.parent.paroxysm.
-        const api = () => window.parent && window.parent.paroxysm;
-        const listEl = document.getElementById("serverList");
-        const checkBtn = document.getElementById("checkBtn");
-        let shown = "";
+        const settings = paroxysmSettings;
+        const app = () => window.parent && window.parent.paroxysm;
+        const $ = id => document.getElementById(id);
 
-        function render() {
-            const app = api();
-            if (!app) return;
-            const servers = app.servers();
-            const active = app.activeIndex();
-            const ready = app.isReady();
-            const signature = JSON.stringify([servers, active, ready]);
+        // ── section nav ──
+        document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => {
+            document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b === btn));
+            document.querySelectorAll(".settings-section").forEach(s => s.classList.toggle("active", s.id === "sec-" + btn.dataset.section));
+            if (btn.dataset.section === "about") renderAbout();
+        }));
+
+        // ── appearance ──
+        const SWATCHES = ['#8b5cf6', '#3b82f6', '#ec4899', '#22c55e', '#f97316', '#ef4444'];
+        function renderAppearance() {
+            const s = settings.get();
+            const box = $("swatches");
+            box.replaceChildren();
+            SWATCHES.forEach(hex => {
+                const b = document.createElement("button");
+                b.className = "swatch" + (hex.toLowerCase() === s.accent.toLowerCase() ? " selected" : "");
+                b.style.setProperty("--c", hex);
+                b.title = hex;
+                b.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+                b.addEventListener("click", () => settings.set({ accent: hex }));
+                box.appendChild(b);
+            });
+            const custom = document.createElement("label");
+            custom.className = "swatch custom" + (SWATCHES.some(h => h.toLowerCase() === s.accent.toLowerCase()) ? "" : " selected");
+            custom.title = "Custom color";
+            custom.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+            const input = document.createElement("input");
+            input.type = "color";
+            input.value = /^#[0-9a-f]{6}$/i.test(s.accent) ? s.accent : "#8b5cf6";
+            input.addEventListener("input", () => settings.set({ accent: input.value }));
+            custom.appendChild(input);
+            box.appendChild(custom);
+            $("animToggle").setAttribute("aria-checked", String(s.animatedBackground !== false));
+        }
+        $("animToggle").addEventListener("click", () => settings.set({ animatedBackground: !(settings.get().animatedBackground !== false) }));
+
+        // ── search ──
+        function renderSearch() {
+            const s = settings.get();
+            const box = $("engines");
+            box.replaceChildren();
+            const entries = Object.entries(settings.engines).map(([id, e]) => [id, e.name]).concat([["custom", "Custom"]]);
+            entries.forEach(([id, name]) => {
+                const b = document.createElement("button");
+                b.className = "choice" + (s.searchEngine === id ? " selected" : "");
+                b.innerHTML = '<span></span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
+                b.firstChild.textContent = name;
+                b.addEventListener("click", () => settings.set({ searchEngine: id }));
+                box.appendChild(b);
+            });
+            $("customField").hidden = s.searchEngine !== "custom";
+            if (document.activeElement !== $("customUrl")) $("customUrl").value = s.customSearchUrl;
+        }
+        $("customUrl").addEventListener("input", e => settings.set({ customSearchUrl: e.target.value.trim() }));
+
+        settings.onChange(() => { renderAppearance(); renderSearch(); });
+        renderAppearance();
+        renderSearch();
+
+        // ── proxy ──
+        let tested = null;   // results of "Test all endpoints"
+        let shown = "";
+        function renderProxy() {
+            const a = app();
+            if (!a) return;
+            const servers = a.servers(), active = a.activeIndex(), ready = a.isReady();
+            const signature = JSON.stringify([servers, active, ready, tested]);
             if (signature === shown) return;
             shown = signature;
 
-            listEl.replaceChildren();
+            const status = $("proxyStatus");
+            if (!servers.length) status.textContent = "No wisp servers are configured.";
+            else if (ready) status.innerHTML = "Connected to <strong></strong>", status.querySelector("strong").textContent = servers[active].name;
+            else status.textContent = "Looking for a working server…";
+
+            const list = $("serverList");
+            list.replaceChildren();
             servers.forEach((srv, i) => {
-                const item = document.createElement("button");
-                item.className = "server-item" + (i === active ? " active" : "");
+                const row = document.createElement("div");
+                row.className = "server-item";
                 const name = document.createElement("span");
                 name.className = "server-item-name";
-                name.textContent = srv.name;
-                item.appendChild(name);
-                if (i === active) {
-                    const badge = document.createElement("span");
-                    badge.className = "server-item-badge" + (ready ? "" : " not-ready");
-                    badge.textContent = ready ? "Active" : "Connecting…";
-                    item.appendChild(badge);
-                }
-                item.addEventListener("click", () => { app.selectServer(i); render(); });
-                listEl.appendChild(item);
+                const idx = document.createElement("small");
+                idx.textContent = String(i + 1);
+                name.append(idx, srv.name);
+                row.appendChild(name);
+                const chip = document.createElement("span");
+                chip.className = "chip";
+                const t = tested && tested[i];
+                if (ready && i === active) { chip.className = "chip ok"; chip.textContent = "Active"; }
+                else if (t && t.ok) { chip.className = "chip ok"; chip.textContent = "Reachable · " + t.ms + " ms"; }
+                else if (t) { chip.className = "chip bad"; chip.textContent = "Unreachable"; }
+                else if (!ready && i === active) { chip.className = "chip warn"; chip.textContent = "Connecting…"; }
+                else chip.remove?.();
+                if (chip.textContent) row.appendChild(chip);
+                list.appendChild(row);
             });
         }
 
-        checkBtn.addEventListener("click", async () => {
-            const app = api();
-            if (!app) return;
-            const label = checkBtn.querySelector("span");
-            checkBtn.disabled = true;
-            label.textContent = "Checking…";
-            try { await app.checkConnection(); }
-            finally { checkBtn.disabled = false; label.textContent = "Check connection"; }
-        });
+        async function busy(btn, label, fn) {
+            const span = btn.querySelector("span");
+            const old = span.textContent;
+            btn.disabled = true;
+            span.textContent = label;
+            try { await fn(); } finally { btn.disabled = false; span.textContent = old; }
+        }
+        $("checkBtn").addEventListener("click", () => busy($("checkBtn"), "Checking…", () => app().checkConnection()));
+        $("findBtn").addEventListener("click", () => busy($("findBtn"), "Searching…", async () => { tested = null; await app().findBestServer(); }));
+        $("testBtn").addEventListener("click", () => busy($("testBtn"), "Testing…", async () => { tested = await app().testAll(); renderProxy(); }));
+        renderProxy();
+        setInterval(renderProxy, 1000);
 
-        render();
-        setInterval(render, 1000);
+        // ── about ──
+        function renderAbout() {
+            const a = app();
+            const info = a ? a.about() : {};
+            const dl = $("aboutList");
+            dl.replaceChildren();
+            [["Version", info.version], ["Scramjet", info.scramjet], ["Scramjet controller", info.controller]].forEach(([k, v]) => {
+                const dt = document.createElement("dt"); dt.textContent = k;
+                const dd = document.createElement("dd"); dd.textContent = v ?? "unknown";
+                dl.append(dt, dd);
+            });
+        }
+        renderAbout();
     </script>
 </body>
 

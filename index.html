@@ -7,7 +7,8 @@
     <title>paroxysm</title>
     <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
-    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
+    <script src="paroxysm-settings.js"></script>
 </head>
 
 <body class="browser">
@@ -49,12 +50,14 @@
             <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
             <span>Settings</span>
         </button>
+        <div class="rail-resizer" id="railResizer" title="Drag to resize (double-click to reset)"></div>
     </aside>
 
     <div class="frames" id="frames"></div>
 
     <div class="pill" id="pill" role="status" aria-live="polite"></div>
 
+    <script src="paroxysm.config.js"></script>
     <script src="scramjet/scramjet.js"></script>
     <script src="controller/controller.api.js"></script>
     <script src="epoxy/index.js"></script>
@@ -64,18 +67,22 @@
         const { defaultConfig } = $scramjet;
         const EpoxyTransport = self.EpoxyTransport.default;
 
-        //── Wisp servers — add yours here ─────────────────────────────────────
-        const WISP_SERVERS = [
-            { name: "Wisp Server 1", url: "wss://api.scvmath.org/wi/" },
-        ];
+        //── Wisp servers (edit them in paroxysm.config.js) ─────────────────────
+        // Ordered fallback list from paroxysm.config.js; the first endpoint that responds is used.
+        const WISP_SERVERS = (window.PAROXYSM_CONFIG?.wispServers ?? []).map(url => {
+            let name = url;
+            try { name = new URL(url).host; } catch {}
+            return { name, url };
+        });
         let activeServerIdx = 0;
 
         const LOCAL_SCHEME     = "paroxysm://";
         const LOCAL_PAGES      = ["newtab", "settings"];
         const SETTINGS_URL     = LOCAL_SCHEME + "settings";
-        const DEFAULT_FAVICON  = "assets/paroxysm-icon.svg";
-        const SETTINGS_FAVICON = "assets/settings.svg";
-        const SEARCH_URL       = "https://www.google.com/search?q="; // change this line to switch search engine
+        const DEFAULT_FAVICON  = "assets/paroxysm/paroxysm_darkmode_icon.png";
+        // Settings tab icon: Lucide's "settings" gear, built in code (no image file needed)
+        const SETTINGS_FAVICON = "data:image/svg+xml," + encodeURIComponent(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f4f4f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>`);
 
         const tabBar        = document.getElementById("tabBar");
         const newTabBtn     = document.getElementById("newTabBtn");
@@ -107,7 +114,7 @@
         // ── Status ─────────────────────────────────────────────────────────────
         // init() still reports through setStatus(); only problems are surfaced.
         const STATUS_TEXT = {
-            "Not ready, wait...": "Can't reach the wisp server. Retrying…",
+            "Not ready, wait...": "Can't reach a wisp server. Retrying…",
             "Transport failed":   "The network transport failed to start."
         };
 
@@ -117,18 +124,51 @@
             else                        hidePill();                                          // connecting / ready
         }
 
-        // ── Settings API ───────────────────────────────────────────────────────
-        // settings.html (same origin) reads and drives the wisp server through this object.
-        function selectServer(i) {
-            if (i === activeServerIdx) return;
-            activeServerIdx = i;
-            scramjet = null;
-            ready = false;
-            init();
+        // ── Wisp server selection ──────────────────────────────────────────────
+        // WISP_SERVERS is an ordered fallback list: the first endpoint that accepts a
+        // connection wins. init() is not modified; it is wrapped below so the endpoint is
+        // chosen before it runs, then init() probes and uses that endpoint exactly as before.
+        const PROBE_CAP_MS = 5000;
+
+        function probeWithin(url, ms) {
+            return Promise.race([
+                probeWisp(url),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out")), ms))
+            ]);
         }
 
+        // Index of the first reachable endpoint. Retries forever unless `once` is set (then -1).
+        async function findWispServer(once = false) {
+            if (!WISP_SERVERS.length) {
+                setStatus("error", "No wisp servers are configured (see paroxysm.config.js).");
+                return once ? -1 : new Promise(() => {});
+            }
+            while (true) {
+                for (let i = 0; i < WISP_SERVERS.length; i++) {
+                    try {
+                        await probeWithin(WISP_SERVERS[i].url, PROBE_CAP_MS);
+                        return i;
+                    } catch (e) {
+                        console.error(`[paroxysm] wisp endpoint ${i + 1}/${WISP_SERVERS.length} unavailable:`, e);
+                    }
+                }
+                if (once) return -1;
+                setStatus("warn", "Not ready, wait...");
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+
+        const initWithServer = init;
+        init = async function () {
+            activeServerIdx = await findWispServer();
+            return initWithServer();
+        };
+
+        // ── Settings API ───────────────────────────────────────────────────────
+        // settings.html (same origin) reads and drives the proxy through this object.
         async function checkConnection() {
             const srv = WISP_SERVERS[activeServerIdx];
+            if (!srv) { showPill("warn", "No wisp server is configured.", 4000); return false; }
             const t0 = performance.now();
             try {
                 await probeWisp(srv.url);
@@ -140,12 +180,45 @@
             }
         }
 
+        // Probe every endpoint at once and report each result.
+        function testAll() {
+            return Promise.all(WISP_SERVERS.map(async s => {
+                const t0 = performance.now();
+                try {
+                    await probeWisp(s.url);
+                    return { name: s.name, url: s.url, ok: true, ms: Math.round(performance.now() - t0) };
+                } catch (e) {
+                    return { name: s.name, url: s.url, ok: false, error: e.message };
+                }
+            }));
+        }
+
+        // Re-run the ordered search; switch only if a better (earlier) endpoint is available.
+        async function findBestServer() {
+            const idx = await findWispServer(true);
+            if (idx === -1) { showPill("warn", "No wisp server responded.", 5000); return false; }
+            if (idx === activeServerIdx && ready) {
+                showPill("ok", `Already on the best available server (${WISP_SERVERS[idx].name})`);
+                return true;
+            }
+            scramjet = null;
+            ready = false;
+            init();
+            return true;
+        }
+
         window.paroxysm = {
             servers:     () => WISP_SERVERS.map(s => ({ name: s.name, url: s.url })),
             activeIndex: () => activeServerIdx,
             isReady:     () => ready,
-            selectServer,
-            checkConnection
+            checkConnection,
+            testAll,
+            findBestServer,
+            about: () => ({
+                version:    window.PAROXYSM_CONFIG?.version ?? "dev",
+                scramjet:   self.$scramjet?.versionInfo?.version ?? "unknown",
+                controller: self.$scramjetController?.VERSION ?? "unknown"
+            })
         };
 
         // ── Helpers ────────────────────────────────────────────────────────────
@@ -161,7 +234,7 @@
         function resolveInput(input) {
             if (!input.trim()) return null;
             if (isUrl(input)) return norm(input);
-            return SEARCH_URL + encodeURIComponent(input);
+            return paroxysmSettings.searchUrl(input);
         }
 
         function getDomain(url) {
@@ -172,6 +245,14 @@
             const domain = getDomain(url);
             if (!domain) return null;
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
+        }
+
+        // Settings is a real tab: focus it if it is already open, otherwise open one.
+        function openSettings() {
+            const existing = tabs.find(t => t.url === SETTINGS_URL);
+            if (existing) { switchTab(existing.id); return; }
+            createTab();
+            go(SETTINGS_URL);
         }
 
         // The proxied URL follows "<origin><controller prefix><id>/<frame id>/".
@@ -234,15 +315,6 @@
 
         function syncTabBarActive() {
             tabs.forEach(t => t.tabEl?.classList.toggle("active", t.id === activeTabId));
-            settingsBtn.classList.toggle("active", getActiveTab()?.url === SETTINGS_URL);
-        }
-
-        // Settings is a real tab: focus it if it is already open, otherwise open one.
-        function openSettings() {
-            const existing = tabs.find(t => t.url === SETTINGS_URL);
-            if (existing) { switchTab(existing.id); return; }
-            createTab();
-            go(SETTINGS_URL);
         }
 
         // ── Tab lifecycle ──────────────────────────────────────────────────────
@@ -339,7 +411,6 @@
                 tab.frame = null;
                 urlInput.value = input;
                 tab.url = input;
-                syncTabBarActive();
                 updateTabTitle(tab, page === "settings" ? "Settings" : "New tab");
                 tab.faviconEl.src = page === "settings" ? SETTINGS_FAVICON : DEFAULT_FAVICON;
                 tab.iframe.src = `${page}.html`;
@@ -350,12 +421,11 @@
             if (!url) return;
             urlInput.value = url;
             tab.url = url;
-            syncTabBarActive();
             updateTabTitle(tab, url);
             updateTabFavicon(tab, url);
             if (!tab.frame) {
                 if (!ready) {
-                    showPill("warn", "Still connecting. The page will load once the wisp server is ready.", 4000);
+                    showPill("warn", "Still connecting. The page will load once a wisp server is ready.", 4000);
                     return;
                 }
                 attachFrame(tab, url);
@@ -382,6 +452,36 @@
         try { if (localStorage.getItem(RAIL_KEY) === "1") setRailCollapsed(true); } catch {}
         document.getElementById("railToggle").addEventListener("click",
             () => setRailCollapsed(!document.body.classList.contains("rail-collapsed")));
+
+        // sidebar: drag the handle to resize (double-click resets), width is remembered
+        const RAIL_W_KEY = "paroxysm:rail-width", RAIL_W_MIN = 160, RAIL_W_MAX = 360;
+        function setRailWidth(px, save = true) {
+            if (px == null) document.body.style.removeProperty("--rail-w");
+            else document.body.style.setProperty("--rail-w", Math.min(RAIL_W_MAX, Math.max(RAIL_W_MIN, Math.round(px))) + "px");
+            if (save) try { px == null ? localStorage.removeItem(RAIL_W_KEY) : localStorage.setItem(RAIL_W_KEY, String(Math.round(px))); } catch {}
+        }
+        try { const w = Number(localStorage.getItem(RAIL_W_KEY)); if (w) setRailWidth(w, false); } catch {}
+
+        const resizer = document.getElementById("railResizer");
+        let resizing = false, lastDown = 0;
+        resizer.addEventListener("pointerdown", e => {
+            const now = performance.now();
+            if (now - lastDown < 350) { lastDown = 0; setRailWidth(null); return; }   // quick second press = reset
+            lastDown = now;
+            resizing = true;
+            resizer.setPointerCapture(e.pointerId);
+            document.body.classList.add("resizing");
+        });
+        resizer.addEventListener("pointermove", e => { if (resizing) setRailWidth(e.clientX, false); });
+        const endResize = e => {
+            if (!resizing) return;
+            resizing = false;
+            document.body.classList.remove("resizing");
+            const w = parseInt(getComputedStyle(document.body).getPropertyValue("--rail"), 10);
+            if (w) setRailWidth(w);
+        };
+        resizer.addEventListener("pointerup", endResize);
+        resizer.addEventListener("pointercancel", endResize);
 
         // ── New tab page messages ──────────────────────────────────────────────
         window.addEventListener("message", e => {

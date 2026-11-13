@@ -7,7 +7,8 @@
     <title>New tab</title>
     <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
-    <link rel="icon" type="image/svg+xml" href="assets/paroxysm-icon.svg">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_icon.ico" sizes="any">
+    <script src="paroxysm-settings.js"></script>
 </head>
 
 <body class="newtab">
@@ -17,7 +18,7 @@
     </svg>
     <canvas class="bg-canvas" id="bg" aria-hidden="true"></canvas>
 
-    <h1 class="wordmark">paroxysm</h1>
+    <h1 id="logoWrap"><img class="logo" id="logo" src="assets/paroxysm/paroxysm_darkmode_logo.png" alt="paroxysm" width="2000" height="512"></h1>
 
     <div class="search-container">
         <div class="search-box">
@@ -30,6 +31,11 @@
         </div>
     </div>
 
+    <!-- Three.js is pinned to an exact version and checked with an integrity hash.
+         If it can't load, the page falls back to a plain gradient. -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
+        integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+        crossorigin="anonymous"></script>
     <script src="newtab-bg.js"></script>
     <script>
         // The shell (index.html) resolves the text into a URL or a search,
@@ -43,6 +49,13 @@
         document.getElementById("searchBtn").onclick = () => navigate(document.getElementById("searchInput").value);
         document.getElementById("searchInput").addEventListener("keydown", e => {
             if (e.key === "Enter") navigate(e.target.value);
+        });
+
+        // If the logo image is missing, show the name as text instead.
+        document.getElementById("logo").addEventListener("error", () => {
+            const w = document.getElementById("logoWrap");
+            w.className = "wordmark";
+            w.textContent = "paroxysm";
         });
     </script>
 </body>

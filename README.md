@@ -20,7 +20,9 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 |---|---|
 | `index.html`, `newtab.html`, `settings.html`, `paroxysm.css` | The interface (browser shell, new tab page, settings page) |
 | `newtab-bg.js` | The new tab background: a small original WebGL shader, no libraries |
-| `fonts/`, `assets/` | Inter Tight (variable, latin) and the placeholder icon |
+| `paroxysm.config.js` | Settings you edit: the wisp endpoint list (tried in order) and the version |
+| `paroxysm-settings.js` | User settings (accent, search engine, background animation), stored in localStorage |
+| `fonts/`, `assets/` | Inter Tight (variable, latin); logo and icons live in `assets/paroxysm/` |
 | `scramjet/`, `controller/`, `epoxy/`, `sw.js` | Proxy engine. Protected: do not edit |
 | `protected.sha256`, `verify_protected.py` | Byte-for-byte check of the protected files |
 | `licenses/` | Licenses for the bundled font and icons |
@@ -29,7 +31,7 @@ Check the protected files at any time with `python verify_protected.py`.
 
 ## Configuration
 
-The wisp server list is `WISP_SERVERS` near the top of the script in `index.html`. The search engine is the `SEARCH_URL` line next to it. The accent colour is `--accent` in `paroxysm.css`. Settings opens as a tab (`paroxysm://settings`) from the sidebar.
+Wisp endpoints are listed in `paroxysm.config.js`; paroxysm tries them in order and uses the first that responds. The new tab background (colours, speed, brightness and so on) is the `CONFIG` block at the top of `newtab-bg.js`; it uses Three.js from a CDN. Accent colour, search engine and the animation toggle are in Settings (`paroxysm://settings`).
 
 ## Licenses
 
