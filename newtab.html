@@ -1,30 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="page">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New tab</title>
-    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <title>Home</title>
+    <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
-    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_icon.ico" sizes="any">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
     <script src="paroxysm-settings.js"></script>
+    <script src="paroxysm-rise.js"></script>
 </head>
 
 <body class="newtab">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-        <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol>
-        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol>
     </svg>
     <canvas class="bg-canvas" id="bg" aria-hidden="true"></canvas>
 
-    <h1 id="logoWrap"><img class="logo" id="logo" src="assets/paroxysm/paroxysm_darkmode_logo.png" alt="paroxysm" width="2000" height="512"></h1>
+    <h1 id="logoWrap" data-rise><img class="logo" id="logo" src="assets/paroxysm/paroxysm_darkmode_logo.png" alt="paroxysm" width="2000" height="512"></h1>
 
-    <div class="search-container">
+    <div class="search-container" data-rise>
         <div class="search-box">
             <span class="search-icon"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
             <input class="search-input" id="searchInput" type="text"
-                placeholder="Search or enter address"
+                placeholder="Search"
                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                 autofocus>
             <button class="search-btn" id="searchBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
@@ -32,7 +33,7 @@
     </div>
 
     <!-- Three.js is pinned to an exact version and checked with an integrity hash.
-         If it can't load, the page falls back to a plain gradient. -->
+         If it can't load, the page falls back to a plain gradient. newtab-bg.js is React Bits Color Bends. -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
         integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
         crossorigin="anonymous"></script>
@@ -50,6 +51,15 @@
         document.getElementById("searchInput").addEventListener("keydown", e => {
             if (e.key === "Enter") navigate(e.target.value);
         });
+
+        // The logo follows the theme (dark and light have their own file).
+        const logo = document.getElementById("logo");
+        function syncLogo() {
+            const mode = paroxysmSettings.get().theme === "light" ? "lightmode" : "darkmode";
+            logo.src = `assets/paroxysm/paroxysm_${mode}_logo.png`;
+        }
+        syncLogo();
+        paroxysmSettings.onChange(syncLogo);
 
         // If the logo image is missing, show the name as text instead.
         document.getElementById("logo").addEventListener("error", () => {

@@ -1,219 +1,413 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="page">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings</title>
-    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
-    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_icon.ico" sizes="any">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
     <script src="paroxysm-settings.js"></script>
+    <script src="paroxysm-rise.js"></script>
 </head>
 
 <body class="settings">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-        <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
-        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+        <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
+        <symbol id="i-music" viewBox="0 0 24 24"><path d="M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19" /><circle cx="18" cy="16" r="3" /><circle cx="6" cy="19" r="3" /></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
+        <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol>
+        <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /><path d="M6.453 15h11.094" /><path d="M8.5 2h7" /></symbol>
+        <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol>
+        <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
+        <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+        <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11" /><line x1="8" x2="8" y1="9" y2="13" /><line x1="15" x2="15.01" y1="12" y2="12" /><line x1="18" x2="18.01" y1="10" y2="10" /><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" /></symbol>
+        <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol>
     </svg>
-    <div class="settings-layout">
-        <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
-            <h1 class="page-title">Settings</h1>
-            <button class="nav-item active" data-section="appearance">Appearance</button>
-            <button class="nav-item" data-section="search">Search</button>
-            <button class="nav-item" data-section="proxy">Proxy</button>
-            <button class="nav-item" data-section="about">About</button>
-        </nav>
 
-        <main>
+    <div class="settings-layout">
+        <h1 class="page-title" data-rise>Settings</h1>
+
+        <aside class="settings-side">
+            <label class="search-field" data-rise>
+                <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+                <input id="settingsSearch" type="text" placeholder="Search settings" autocomplete="off" spellcheck="false" aria-label="Search settings">
+            </label>
+            <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
+                <button class="nav-item active" data-section="appearance" data-rise><svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg><span>Appearance</span></button>
+                <button class="nav-item" data-section="search" data-rise><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span></button>
+                <button class="nav-item" data-section="music" data-rise><svg class="icon" aria-hidden="true"><use href="#i-music"/></svg><span>Music</span></button>
+                <button class="nav-item" data-section="proxy" data-rise><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span>Proxy</span></button>
+                <button class="nav-item" data-section="cloaking" data-rise><svg class="icon" aria-hidden="true"><use href="#i-eye-off"/></svg><span>Cloaking</span></button>
+                <button class="nav-item" data-section="dev" data-rise><svg class="icon" aria-hidden="true"><use href="#i-flask-conical"/></svg><span>Dev</span></button>
+                <button class="nav-item" data-section="about" data-rise><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>About</span></button>
+            </nav>
+            <div class="build-info" id="buildInfo" data-rise></div>
+        </aside>
+
+        <main class="settings-main" id="settingsMain">
             <!-- Appearance -->
             <section class="settings-section active" id="sec-appearance">
-                <h2 class="section-title">Appearance</h2>
-                <div class="card">
+                <div class="card" data-rise>
                     <h3 class="card-title">Accent color</h3>
-                    <p class="card-desc">Used for the selected tab, buttons and switches.</p>
-                    <div class="swatches" id="swatches"></div>
+                    <p class="card-desc">The color of the selected tab and the Home background. It also tints the whole interface.</p>
+                    <div class="accent-grid" id="accentGrid"></div>
                 </div>
-                <div class="card">
+                <div class="card" data-rise>
+                    <h3 class="card-title">Theme</h3>
+                    <p class="card-desc">Light or dark. The accent color follows the theme: it tints the surfaces and text of whichever you pick, and the Home background follows it too.</p>
+                    <div class="choices two" id="themeList"></div>
+                </div>
+                <div class="card" data-rise>
                     <div class="row">
                         <div>
                             <h3 class="card-title">Animated background</h3>
-                            <p class="hint" style="margin-top:4px">Slowly moving colour on the new tab page. Turn off for a still image.</p>
+                            <p class="card-desc" style="margin-bottom:0">Slowly moving color on the Home page. Turn off for a still image.</p>
                         </div>
-                        <button class="switch" id="animToggle" role="switch" aria-checked="true" aria-label="Animated background"></button>
+                        <button class="switch" id="animSwitch" role="switch" aria-checked="true" aria-label="Animated background"></button>
                     </div>
+                </div>
+                <div class="card" data-rise>
+                    <h3 class="card-title">Sidebar</h3>
+                    <p class="card-desc">Move a link up or down to change where it sits in the sidebar.</p>
+                    <div class="choices" id="sidebarList"></div>
                 </div>
             </section>
 
             <!-- Search -->
             <section class="settings-section" id="sec-search">
-                <h2 class="section-title">Search</h2>
-                <div class="card">
+                <div class="card" data-rise>
                     <h3 class="card-title">Search engine</h3>
-                    <p class="card-desc">Used when you type something that isn't an address.</p>
-                    <div class="choices" id="engines"></div>
+                    <p class="card-desc">Used by the Home page and the address bar when you type something that isn't a web address.</p>
+                    <div class="choices" id="engineList"></div>
                     <div class="custom-field" id="customField" hidden>
-                        <input class="text-input" id="customUrl" type="text" placeholder="https://example.com/search?q=%s" autocomplete="off" spellcheck="false">
-                        <p class="hint">Use %s where the search words go.</p>
+                        <input class="text-input" id="customUrl" type="text" placeholder="https://example.com/?q=%s" autocomplete="off" spellcheck="false" aria-label="Custom search URL">
+                        <p class="hint" id="customHint">Use %s where your search words go. For example: https://example.com/?q=%s</p>
                     </div>
-                    <p class="hint">Only Google has been tested with the current Scramjet version. DuckDuckGo is known to need a newer one.</p>
                 </div>
             </section>
+
+            <!-- Music: empty for now -->
+            <section class="settings-section" id="sec-music"></section>
 
             <!-- Proxy -->
             <section class="settings-section" id="sec-proxy">
-                <h2 class="section-title">Proxy</h2>
-                <div class="card">
-                    <h3 class="card-title">Wisp servers</h3>
-                    <p class="card-desc">A wisp server is a backend relay that tunnels and multiplexes multiple TCP and UDP data streams over a single WebSocket connection. paroxysm tries the endpoints below in order and uses the first one that responds, so you never need to pick one.</p>
-                    <p class="status-line" id="proxyStatus">Connecting…</p>
+                <div class="card" data-rise>
+                    <h3 class="card-title">Wisp server</h3>
+                    <p class="card-desc">paroxysm connects through a wisp server. Pick one yourself, or let paroxysm find the best one that works.</p>
+                    <p class="status-line" id="proxyStatus"></p>
                     <div class="server-list" id="serverList"></div>
-                    <div class="card-actions">
-                        <button class="btn primary" id="findBtn"><span>Find best server</span></button>
-                        <button class="btn" id="testBtn"><span>Test all endpoints</span></button>
-                        <button class="btn" id="checkBtn"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><span>Check connection</span></button>
+                    <div class="add-server" id="addServer">
+                        <input class="text-input" id="wispInput" type="text" placeholder="wss://example.com/wisp/" autocomplete="off" spellcheck="false" aria-label="Wisp server URL">
+                        <button class="btn primary" id="wispAdd">Add</button>
                     </div>
-                    <p class="hint">Endpoints are listed in <code>paroxysm.config.js</code>.</p>
+                    <p class="hint" id="wispHint" hidden></p>
+                    <div class="card-actions">
+                        <button class="btn primary" id="findBest">Find best server</button>
+                        <button class="btn" id="testAll">Test all servers</button>
+                        <button class="btn" id="addCustom">Add custom URL</button>
+                    </div>
                 </div>
             </section>
 
+            <!-- Cloaking -->
+            <section class="settings-section" id="sec-cloaking">
+                <div class="card" data-rise>
+                    <h3 class="card-title">Tab disguise</h3>
+                    <p class="card-desc">Changes the title and icon of this browser tab so it looks like another site.</p>
+                    <div class="choices two" id="cloakList"></div>
+                </div>
+                <div class="card" data-rise>
+                    <h3 class="card-title">Character masking</h3>
+                    <p class="card-desc">Replaces some letters on proxied pages with lookalike Unicode characters. The page looks the same, but the text in the DOM inspector doesn't match. Higher values replace more letters.</p>
+                    <div class="range-row">
+                        <input type="range" id="maskRange" min="0" max="100" step="10" aria-label="Character masking">
+                        <span class="range-val" id="maskVal">0%</span>
+                    </div>
+                    <p class="hint">It can affect copy and paste, find in page and screen readers. It starts once a page has loaded.</p>
+                </div>
+                <div class="card" data-rise>
+                    <div class="row">
+                        <div>
+                            <h3 class="card-title">Panic key</h3>
+                            <p class="card-desc" style="margin-bottom:0">Press this key anywhere in paroxysm to leave straight away.</p>
+                        </div>
+                        <div class="row" style="gap:8px;flex:none">
+                            <span class="kbd" id="panicKey"></span>
+                            <button class="btn" id="panicChange">Change</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card" data-rise>
+                    <h3 class="card-title">Panic redirect URL</h3>
+                    <p class="card-desc">Where the panic key sends you.</p>
+                    <div class="choices two" id="panicList"></div>
+                    <div class="custom-field" id="panicCustomField" hidden>
+                        <input class="text-input" id="panicCustom" type="text" placeholder="https://example.com" autocomplete="off" spellcheck="false" aria-label="Custom panic URL">
+                    </div>
+                    <p class="hint" id="panicHint"></p>
+                </div>
+            </section>
+
+            <!-- Dev: empty for now -->
+            <section class="settings-section" id="sec-dev"></section>
+
             <!-- About -->
             <section class="settings-section" id="sec-about">
-                <h2 class="section-title">About</h2>
-                <div class="card">
+                <div class="card" data-rise>
                     <h3 class="card-title">paroxysm</h3>
                     <dl class="kv" style="margin-top:16px" id="aboutList"></dl>
                 </div>
-                <div class="card">
+                <div class="card" data-rise>
+                    <h3 class="card-title">Credits</h3>
+                    <dl class="kv" style="margin-top:16px" id="creditList"></dl>
+                </div>
+                <div class="card" data-rise>
                     <h3 class="card-title">Open source</h3>
                     <ul class="credits">
                         <li>Scramjet (AGPL-3.0), the proxy engine</li>
                         <li>Epoxy transport over WISP</li>
-                        <li>Three.js (MIT), the new tab background</li>
-                        <li>Inter Tight (SIL OFL 1.1), the typeface</li>
+                        <li>Three.js (MIT) and React Bits Color Bends (MIT + Commons Clause), the Home background</li>
+                        <li>Inter (SIL OFL 1.1), the typeface</li>
                         <li>Lucide (ISC), the icons</li>
                     </ul>
                 </div>
             </section>
+
+            <p class="no-results" id="noResults">No settings match that search.</p>
         </main>
     </div>
 
     <script>
-        const settings = paroxysmSettings;
-        const app = () => window.parent && window.parent.paroxysm;
+        const S = paroxysmSettings;
         const $ = id => document.getElementById(id);
+        const app = () => window.parent && window.parent.paroxysm;
+        const cloak = () => window.parent && window.parent.paroxysmCloak;
+        const config = () => (window.parent && window.parent.PAROXYSM_CONFIG) || window.PAROXYSM_CONFIG || {};
+        const SVG = "http://www.w3.org/2000/svg";
+
+        // Small DOM helpers (no innerHTML with text we did not write).
+        function icon(name) {
+            const svg = document.createElementNS(SVG, "svg");
+            svg.setAttribute("class", "icon");
+            svg.setAttribute("aria-hidden", "true");
+            const use = document.createElementNS(SVG, "use");
+            use.setAttribute("href", "#i-" + name);
+            svg.appendChild(use);
+            return svg;
+        }
+        function h(tag, props = {}, ...kids) {
+            const el = document.createElement(tag);
+            for (const [k, v] of Object.entries(props)) {
+                if (k === "class") el.className = v;
+                else if (k === "text") el.textContent = v;
+                else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+                else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+            }
+            kids.flat().forEach(c => c != null && el.append(c));
+            return el;
+        }
+
+        // A list of options where one is selected.
+        function choiceList(container, items, selectedId, onPick) {
+            container.replaceChildren(...items.map(it =>
+                h("button", { class: "choice" + (it.id === selectedId ? " selected" : ""), onclick: () => onPick(it.id) },
+                    h("span", { text: it.label }), icon("check"))));
+        }
 
         // ── section nav ──
+        function showSection(name) {
+            document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.section === name));
+            document.querySelectorAll(".settings-section").forEach(sec => sec.classList.toggle("active", sec.id === "sec-" + name));
+            if (name === "about") renderAbout();
+            if (name === "proxy") renderServers();
+            main.scrollTop = 0;
+            window.paroxysmRise?.run($("sec-" + name));
+        }
+        const main = $("settingsMain");
         document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => {
-            document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b === btn));
-            document.querySelectorAll(".settings-section").forEach(s => s.classList.toggle("active", s.id === "sec-" + btn.dataset.section));
-            if (btn.dataset.section === "about") renderAbout();
+            $("settingsSearch").value = "";
+            applySearch();
+            showSection(btn.dataset.section);
         }));
 
+        // ── search settings ──
+        // Typing shows every card that matches, from any section; clearing returns to the chosen section.
+        function applySearch() {
+            const q = $("settingsSearch").value.trim().toLowerCase();
+            const cards = document.querySelectorAll(".settings-section .card");
+            main.classList.toggle("searching", !!q);
+            let any = false;
+            cards.forEach(c => {
+                const hit = !q || c.textContent.toLowerCase().includes(q);
+                c.classList.toggle("hide", !hit);
+                if (hit) any = true;
+            });
+            document.querySelectorAll(".settings-section").forEach(sec => {
+                sec.classList.toggle("empty", !!q && !sec.querySelector(".card:not(.hide)"));
+            });
+            main.classList.toggle("none", !!q && !any);
+            if (q) main.scrollTop = 0;
+        }
+        $("settingsSearch").addEventListener("input", applySearch);
+
         // ── appearance ──
-        const SWATCHES = ['#8b5cf6', '#3b82f6', '#ec4899', '#22c55e', '#f97316', '#ef4444'];
-        function renderAppearance() {
-            const s = settings.get();
-            const box = $("swatches");
-            box.replaceChildren();
-            SWATCHES.forEach(hex => {
-                const b = document.createElement("button");
-                b.className = "swatch" + (hex.toLowerCase() === s.accent.toLowerCase() ? " selected" : "");
-                b.style.setProperty("--c", hex);
-                b.title = hex;
-                b.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
-                b.addEventListener("click", () => settings.set({ accent: hex }));
-                box.appendChild(b);
-            });
-            const custom = document.createElement("label");
-            custom.className = "swatch custom" + (SWATCHES.some(h => h.toLowerCase() === s.accent.toLowerCase()) ? "" : " selected");
-            custom.title = "Custom color";
-            custom.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
-            const input = document.createElement("input");
-            input.type = "color";
-            input.value = /^#[0-9a-f]{6}$/i.test(s.accent) ? s.accent : "#8b5cf6";
-            input.addEventListener("input", () => settings.set({ accent: input.value }));
-            custom.appendChild(input);
-            box.appendChild(custom);
-            $("animToggle").setAttribute("aria-checked", String(s.animatedBackground !== false));
-        }
-        $("animToggle").addEventListener("click", () => settings.set({ animatedBackground: !(settings.get().animatedBackground !== false) }));
+        const accentGrid = $("accentGrid");
+        S.accents.forEach(a => accentGrid.append(h("button", {
+            class: "accent-pill", style: `--c:${a.hex}`, "data-hex": a.hex, onclick: () => S.set({ accent: a.hex })
+        }, icon("check"), h("span", { text: a.name }))));
+        const customInput = h("input", { type: "color", "aria-label": "Custom accent color" });
+        customInput.addEventListener("input", () => S.set({ accent: customInput.value }));
+        accentGrid.append(h("label", { class: "accent-pill custom" }, icon("check"), h("span", { text: "Custom" }), customInput));
 
-        // ── search ──
-        function renderSearch() {
-            const s = settings.get();
-            const box = $("engines");
-            box.replaceChildren();
-            const entries = Object.entries(settings.engines).map(([id, e]) => [id, e.name]).concat([["custom", "Custom"]]);
-            entries.forEach(([id, name]) => {
-                const b = document.createElement("button");
-                b.className = "choice" + (s.searchEngine === id ? " selected" : "");
-                b.innerHTML = '<span></span><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>';
-                b.firstChild.textContent = name;
-                b.addEventListener("click", () => settings.set({ searchEngine: id }));
-                box.appendChild(b);
+        function syncAccent() {
+            const cur = S.get().accent.toLowerCase();
+            let known = false;
+            accentGrid.querySelectorAll(".accent-pill[data-hex]").forEach(p => {
+                const on = p.dataset.hex === cur;
+                known ||= on;
+                p.classList.toggle("selected", on);
             });
-            $("customField").hidden = s.searchEngine !== "custom";
-            if (document.activeElement !== $("customUrl")) $("customUrl").value = s.customSearchUrl;
+            accentGrid.querySelector(".custom").classList.toggle("selected", !known);
+            if (!known && document.activeElement !== customInput) customInput.value = cur;
         }
-        $("customUrl").addEventListener("input", e => settings.set({ customSearchUrl: e.target.value.trim() }));
 
-        settings.onChange(() => { renderAppearance(); renderSearch(); });
-        renderAppearance();
-        renderSearch();
+        function renderTheme() {
+            choiceList($("themeList"), [{ id: "dark", label: "Dark" }, { id: "light", label: "Light" }],
+                S.get().theme, id => S.set({ theme: id }));
+        }
+
+        const animSwitch = $("animSwitch");
+        animSwitch.addEventListener("click", () => S.set({ animatedBackground: !S.get().animatedBackground }));
+
+        const SIDEBAR_LABELS = { games: ["Games", "gamepad-2"], music: ["Music", "music"], ai: ["AI", "bot"], settings: ["Settings", "settings"] };
+        function renderSidebar() {
+            const order = S.sidebarOrder();
+            const move = (i, d) => { const o = order.slice(); [o[i], o[i + d]] = [o[i + d], o[i]]; S.set({ sidebarOrder: o }); };
+            $("sidebarList").replaceChildren(...order.map((key, i) => h("div", { class: "sidebar-row" },
+                icon(SIDEBAR_LABELS[key][1]),
+                h("span", { class: "name", text: SIDEBAR_LABELS[key][0] }),
+                h("button", { class: "icon-btn", title: "Move up", "aria-label": "Move " + SIDEBAR_LABELS[key][0] + " up", disabled: i === 0, onclick: () => move(i, -1) }, icon("chevron-up")),
+                h("button", { class: "icon-btn", title: "Move down", "aria-label": "Move " + SIDEBAR_LABELS[key][0] + " down", disabled: i === order.length - 1, onclick: () => move(i, 1) }, icon("chevron-down")))));
+        }
+
+        // ── search engine ──
+        function renderEngines() {
+            const items = Object.entries(S.engines).map(([id, e]) => ({ id, label: e.name + (id === S.defaults.searchEngine ? " (default)" : "") }));
+            items.push({ id: "custom", label: "Custom" });
+            choiceList($("engineList"), items, S.get().searchEngine, id => S.set({ searchEngine: id }));
+            $("customField").hidden = S.get().searchEngine !== "custom";
+        }
+        $("customUrl").addEventListener("input", e => {
+            const v = e.target.value.trim();
+            const ok = /^https?:\/\/.+%s/i.test(v);
+            $("customHint").textContent = ok || !v
+                ? "Use %s where your search words go. For example: https://example.com/?q=%s"
+                : "That address needs %s where your search words go, for example https://example.com/?q=%s";
+            if (ok) S.set({ customSearchUrl: v });
+        });
 
         // ── proxy ──
-        let tested = null;   // results of "Test all endpoints"
-        let shown = "";
-        function renderProxy() {
+        let testResults = {};
+        let wispMessage = "";
+        function renderServers() {
             const a = app();
-            if (!a) return;
-            const servers = a.servers(), active = a.activeIndex(), ready = a.isReady();
-            const signature = JSON.stringify([servers, active, ready, tested]);
-            if (signature === shown) return;
-            shown = signature;
-
-            const status = $("proxyStatus");
-            if (!servers.length) status.textContent = "No wisp servers are configured.";
-            else if (ready) status.innerHTML = "Connected to <strong></strong>", status.querySelector("strong").textContent = servers[active].name;
-            else status.textContent = "Looking for a working server…";
-
             const list = $("serverList");
-            list.replaceChildren();
-            servers.forEach((srv, i) => {
-                const row = document.createElement("div");
-                row.className = "server-item";
-                const name = document.createElement("span");
-                name.className = "server-item-name";
-                const idx = document.createElement("small");
-                idx.textContent = String(i + 1);
-                name.append(idx, srv.name);
-                row.appendChild(name);
-                const chip = document.createElement("span");
-                chip.className = "chip";
-                const t = tested && tested[i];
-                if (ready && i === active) { chip.className = "chip ok"; chip.textContent = "Active"; }
-                else if (t && t.ok) { chip.className = "chip ok"; chip.textContent = "Reachable · " + t.ms + " ms"; }
-                else if (t) { chip.className = "chip bad"; chip.textContent = "Unreachable"; }
-                else if (!ready && i === active) { chip.className = "chip warn"; chip.textContent = "Connecting…"; }
-                else chip.remove?.();
-                if (chip.textContent) row.appendChild(chip);
-                list.appendChild(row);
-            });
+            if (!a) { list.replaceChildren(h("p", { class: "hint", text: "Open Settings inside paroxysm to manage servers." })); return; }
+            const servers = a.servers(), active = a.activeIndex(), pref = S.get().wispPreferred;
+            const prefIdx = servers.findIndex(s => s.id === pref);
+            $("proxyStatus").replaceChildren(
+                document.createTextNode(a.isReady() ? "Using " : "Connecting. Trying "),
+                h("strong", { text: servers[active]?.name ?? "a server" }),
+                document.createTextNode(prefIdx >= 0 ? ", picked by you." : ", chosen automatically."));
+            list.replaceChildren(...servers.map((s, i) => {
+                const r = testResults[s.id];
+                const tick = icon("check"); tick.classList.add("check");
+                const kids = [tick, h("span", { class: "name", text: s.name })];
+                if (i === active && a.isReady()) kids.push(h("span", { class: "chip ok", text: "In use" }));
+                if (r) kids.push(h("span", { class: "chip " + (r.ok ? "ok" : "bad"), text: r.ok ? r.ms + " ms" : "Unreachable" }));
+                if (s.custom) kids.push(h("button", {
+                    class: "icon-btn", title: "Remove", "aria-label": "Remove " + s.name,
+                    onclick: e => { e.stopPropagation(); const res = a.removeCustomServer(i); wispMessage = res.ok ? "" : res.error; renderServers(); }
+                }, icon("x")));
+                return h("div", {
+                    class: "server-item" + (i === prefIdx ? " selected" : ""), role: "button", tabindex: "0", title: "Use " + s.name,
+                    onclick: async () => { await a.selectServer(i); renderServers(); },
+                    onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }
+                }, kids);
+            }));
+            $("wispHint").hidden = !wispMessage;
+            $("wispHint").textContent = wispMessage;
+        }
+        $("findBest").addEventListener("click", async e => {
+            e.currentTarget.disabled = true;
+            await app()?.findBestServer();
+            e.currentTarget.disabled = false;
+            renderServers();
+        });
+        $("testAll").addEventListener("click", async e => {
+            const btn = e.currentTarget, a = app();
+            if (!a) return;
+            btn.disabled = true; btn.textContent = "Testing...";
+            testResults = {};
+            (await a.testAll()).forEach(r => { testResults[r.id] = r; });
+            btn.disabled = false; btn.textContent = "Test all servers";
+            renderServers();
+        });
+        $("addCustom").addEventListener("click", () => { $("addServer").classList.toggle("open"); $("wispInput").focus(); });
+        function addWisp() {
+            const res = app()?.addCustomServer($("wispInput").value);
+            if (!res) return;
+            wispMessage = res.ok ? "" : res.error;
+            if (res.ok) { $("wispInput").value = ""; $("addServer").classList.remove("open"); }
+            renderServers();
+        }
+        $("wispAdd").addEventListener("click", addWisp);
+        $("wispInput").addEventListener("keydown", e => { if (e.key === "Enter") addWisp(); });
+        setInterval(() => { if ($("sec-proxy").classList.contains("active") || main.classList.contains("searching")) renderServers(); }, 1500);
+
+        // ── cloaking ──
+        function renderCloaks() {
+            choiceList($("cloakList"), S.cloaks.map(c => ({ id: c.id, label: c.label })), S.get().tabCloak, id => S.set({ tabCloak: id }));
+        }
+        const maskRange = $("maskRange");
+        maskRange.addEventListener("input", () => S.set({ charMask: Number(maskRange.value) }));
+        function syncMask() {
+            const v = S.get().charMask || 0;
+            if (Number(maskRange.value) !== v) maskRange.value = v;
+            $("maskVal").textContent = v + "%";
         }
 
-        async function busy(btn, label, fn) {
-            const span = btn.querySelector("span");
-            const old = span.textContent;
-            btn.disabled = true;
-            span.textContent = label;
-            try { await fn(); } finally { btn.disabled = false; span.textContent = old; }
+        let capturing = false;
+        function keyLabel(k) { return k === " " ? "Space" : k === "`" ? "` (backtick)" : k; }
+        function syncPanicKey() { $("panicKey").textContent = capturing ? "Press a key..." : keyLabel(S.get().panicKey); }
+        function endCapture() { capturing = false; cloak()?.setCapturing(false); document.removeEventListener("keydown", onCapture, true); syncPanicKey(); }
+        function onCapture(e) {
+            if (e.key === "Shift" || e.key === "Control" || e.key === "Alt" || e.key === "Meta") return;
+            e.preventDefault(); e.stopPropagation();
+            if (e.key !== "Escape" && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key.length === 1 || /^F\d{1,2}$/.test(e.key))) S.set({ panicKey: e.key });
+            endCapture();
         }
-        $("checkBtn").addEventListener("click", () => busy($("checkBtn"), "Checking…", () => app().checkConnection()));
-        $("findBtn").addEventListener("click", () => busy($("findBtn"), "Searching…", async () => { tested = null; await app().findBestServer(); }));
-        $("testBtn").addEventListener("click", () => busy($("testBtn"), "Testing…", async () => { tested = await app().testAll(); renderProxy(); }));
-        renderProxy();
-        setInterval(renderProxy, 1000);
+        $("panicChange").addEventListener("click", () => {
+            if (capturing) { endCapture(); return; }
+            capturing = true; cloak()?.setCapturing(true); syncPanicKey();
+            document.addEventListener("keydown", onCapture, true);
+        });
+
+        function renderPanic() {
+            const s = S.get();
+            choiceList($("panicList"), S.panicTemplates.map(t => ({ id: t.id, label: t.label })), s.panicTemplate, id => S.set({ panicTemplate: id }));
+            $("panicCustomField").hidden = s.panicTemplate !== "custom";
+            const url = S.panicUrl();
+            $("panicHint").textContent = url ? "Goes to " + url : (s.panicTemplate === "custom" ? "Enter a web address." : "");
+        }
+        $("panicCustom").addEventListener("input", e => S.set({ panicCustomUrl: e.target.value }));
 
         // ── about ──
         function renderAbout() {
@@ -222,11 +416,36 @@
             const dl = $("aboutList");
             dl.replaceChildren();
             [["Version", info.version], ["Scramjet", info.scramjet], ["Scramjet controller", info.controller]].forEach(([k, v]) => {
-                const dt = document.createElement("dt"); dt.textContent = k;
-                const dd = document.createElement("dd"); dd.textContent = v ?? "unknown";
-                dl.append(dt, dd);
+                dl.append(h("dt", { text: k }), h("dd", { text: v ?? "unknown" }));
             });
+            const cfg = config();
+            const credits = $("creditList");
+            credits.replaceChildren();
+            [["Developers", cfg.developers], ["Game source", cfg.gameSource], ["AI provider", cfg.aiProvider],
+             ["Extensions", cfg.extensions], ["UI inspiration", cfg.uiInspiration]].forEach(([k, v]) => {
+                if (v) credits.append(h("dt", { text: k }), h("dd", { text: v }));
+            });
+            credits.closest(".card").hidden = !credits.children.length;
+            $("buildInfo").textContent = "paroxysm v" + (info.version ?? cfg.version ?? "dev");
         }
+
+        // ── keep everything in step with the stored settings ──
+        function syncAll() {
+            syncAccent();
+            renderTheme();
+            animSwitch.setAttribute("aria-checked", String(S.get().animatedBackground !== false));
+            renderSidebar();
+            renderEngines();
+            renderCloaks();
+            syncMask();
+            syncPanicKey();
+            renderPanic();
+        }
+        $("customUrl").value = S.get().customSearchUrl;
+        $("panicCustom").value = S.get().panicCustomUrl;
+        S.onChange(syncAll);
+        syncAll();
+        renderServers();
         renderAbout();
     </script>
 </body>

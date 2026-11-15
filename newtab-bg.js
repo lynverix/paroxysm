@@ -1,24 +1,33 @@
-// paroxysm: new tab background (Three.js).
+// paroxysm: Home page background (Three.js).
 //
-// Everything you are likely to want to change is in CONFIG below.
+// This is React Bits "Color Bends" (https://reactbits.dev/backgrounds/color-bends, MIT + Commons
+// Clause, (c) David Haz), ported from React to plain JavaScript. The vertex shader, the fragment
+// shader and the default props below are the upstream ones, unchanged, except that mouseInfluence
+// is 0 and colors is the accent. Only the wiring around them differs: it draws on the page's own
+// canvas, listens for the pointer on the whole page, follows Settings > Appearance > Animated
+// background, and follows the accent colour (the theme shows through as the page colour behind it).
+//
+// Everything you are likely to want to change is in PROPS below.
 // Three.js is loaded from a CDN by newtab.html; if it can't be loaded (offline, blocked)
 // the page falls back to a plain gradient and nothing else is affected.
 (() => {
-    const CONFIG = {
-        // Colour stops from dark to light, spread evenly across the bands. 2 to 6 colours.
-        colors: ["#a855f7"],
+    const MAX_COLORS = 8;
 
-        speed: 0.12,        // how fast the bands drift (0 = still)
-        warp: 1,         // how strongly the bands bend
-        bands: 6,         // how many bands fit across the screen
-        sharpness: 1.7,     // higher = thinner, more contrasty bands
-        angle: 0.65,        // direction of the flow, in radians
-        brightness: 0.40,   // overall brightness (keep it low so text stays readable)
-        vignette: 0.82,     // how much the edges darken (0 = none, 1 = strong)
-        grain: 2.0,         // fine dither against banding, in 1/255 steps (0 = off)
-
-        resolution: 0.5,    // render scale: 1 = full, 0.5 = half (cheaper, still smooth)
-        fps: 30             // frame-rate cap
+    const PROPS = {
+        rotation: 90,
+        speed: 0.2,
+        colors: ["#AE72DF"],     // the default accent; at run time the current accent replaces it
+        transparent: true,
+        autoRotate: 0,
+        scale: 1,
+        frequency: 1,
+        warpStrength: 1,
+        mouseInfluence: 0,       // upstream default is 1; set to 0 for paroxysm
+        parallax: 0.5,
+        noise: 0.15,
+        iterations: 1,
+        intensity: 1.5,
+        bandWidth: 6
     };
 
     const canvas = document.getElementById("bg");
@@ -32,17 +41,8 @@
 
     if (!window.THREE) return fallback("Three.js did not load");
 
-    const MAX_COLORS = 6;
-
-    const VERT = `
-varying vec2 vUv;
-void main() {
-  vUv = uv;
-  gl_Position = vec4(position, 1.0);
-}
-    `;
-
-    const FRAG = `
+    // ── upstream shaders (verbatim) ─────────────────────────────────────────
+    const frag = `
 #define MAX_COLORS ${MAX_COLORS}
 uniform vec2 uCanvas;
 uniform float uTime;
@@ -141,81 +141,149 @@ void main() {
     vec3 rgb = (uTransparent > 0) ? col * a : col;
     gl_FragColor = vec4(rgb, a);
 }
-    `;
+`;
 
-    let renderer, material, scene, camera;
+    const vert = `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = vec4(position, 1.0);
+}
+`;
+    // ── end of upstream shaders ─────────────────────────────────────────────
+
+    let renderer, material, scene, camera, clock, setColors;
     try {
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "low-power" });
-        renderer.setPixelRatio(CONFIG.resolution);
-
-        const colors = CONFIG.colors.slice(0, MAX_COLORS).map(c => new THREE.Color(c));
-        while (colors.length < 2) colors.push(colors[0] ?? new THREE.Color("#000000"));
-        const count = colors.length;
-        while (colors.length < MAX_COLORS) colors.push(colors[count - 1]);
-
-        material = new THREE.ShaderMaterial({
-            vertexShader: VERT,
-            fragmentShader: FRAG,
-            depthTest: false,
-            depthWrite: false,
-            uniforms: {
-                uRes:      { value: new THREE.Vector2(1, 1) },
-                uTime:     { value: 0 },
-                uColors:   { value: colors },
-                uCount:    { value: count },
-                uWarp:     { value: CONFIG.warp },
-                uBands:    { value: CONFIG.bands },
-                uSharp:    { value: CONFIG.sharpness },
-                uAngle:    { value: CONFIG.angle },
-                uBright:   { value: CONFIG.brightness },
-                uVignette: { value: CONFIG.vignette },
-                uGrain:    { value: CONFIG.grain }
-            }
-        });
-
         scene = new THREE.Scene();
-        camera = new THREE.Camera();
-        scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+        const geometry = new THREE.PlaneGeometry(2, 2);
+        const uColorsArray = Array.from({ length: MAX_COLORS }, () => new THREE.Vector3(0, 0, 0));
+        material = new THREE.ShaderMaterial({
+            vertexShader: vert,
+            fragmentShader: frag,
+            uniforms: {
+                uCanvas: { value: new THREE.Vector2(1, 1) },
+                uTime: { value: 0 },
+                uSpeed: { value: PROPS.speed },
+                uRot: { value: new THREE.Vector2(1, 0) },
+                uColorCount: { value: 0 },
+                uColors: { value: uColorsArray },
+                uTransparent: { value: PROPS.transparent ? 1 : 0 },
+                uScale: { value: PROPS.scale },
+                uFrequency: { value: PROPS.frequency },
+                uWarpStrength: { value: PROPS.warpStrength },
+                uPointer: { value: new THREE.Vector2(0, 0) },
+                uMouseInfluence: { value: PROPS.mouseInfluence },
+                uParallax: { value: PROPS.parallax },
+                uNoise: { value: PROPS.noise },
+                uIterations: { value: PROPS.iterations },
+                uIntensity: { value: PROPS.intensity },
+                uBandWidth: { value: PROPS.bandWidth }
+            },
+            premultipliedAlpha: true,
+            transparent: true
+        });
+        scene.add(new THREE.Mesh(geometry, material));
+
+        renderer = new THREE.WebGLRenderer({
+            canvas,
+            antialias: false,
+            powerPreference: "high-performance",
+            alpha: true
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setClearColor(0x000000, PROPS.transparent ? 0 : 1);
+        clock = new THREE.Clock();
+
+        // colours (the same hex parsing as upstream)
+        const toVec3 = hex => {
+            const h = hex.replace("#", "").trim();
+            const v = h.length === 3
+                ? [parseInt(h[0] + h[0], 16), parseInt(h[1] + h[1], 16), parseInt(h[2] + h[2], 16)]
+                : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+            return new THREE.Vector3(v[0] / 255, v[1] / 255, v[2] / 255);
+        };
+        setColors = list => {
+            const arr = (list || []).filter(Boolean).slice(0, MAX_COLORS).map(toVec3);
+            for (let i = 0; i < MAX_COLORS; i++) {
+                if (i < arr.length) uColorsArray[i].copy(arr[i]);
+                else uColorsArray[i].set(0, 0, 0);
+            }
+            material.uniforms.uColorCount.value = arr.length;
+        };
     } catch (e) {
         return fallback(e.message);
     }
 
-    const size = new THREE.Vector2();
-    const FRAME_MS = 1000 / CONFIG.fps;
-    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const wantsMotion = () => CONFIG.speed > 0 && !reduceMotion && paroxysmSettings.get().animatedBackground !== false;
-    const start = performance.now();
-    let last = 0;
-    let raf = 0;
+    const accentColors = () => [paroxysmSettings.get().accent || PROPS.colors[0]];
+    setColors(accentColors());
 
-    function draw(seconds) {
-        const w = Math.max(2, canvas.clientWidth);
-        const h = Math.max(2, canvas.clientHeight);
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const wantsMotion = () => !reduceMotion && paroxysmSettings.get().animatedBackground !== false;
+
+    // pointer, smoothed the way upstream does (only parallax reads it while mouseInfluence is 0)
+    const pointerTarget = new THREE.Vector2(0, 0);
+    const pointerCurrent = new THREE.Vector2(0, 0);
+    const POINTER_SMOOTH = 8;
+    document.addEventListener("pointermove", e => {
+        pointerTarget.set((e.clientX / (innerWidth || 1)) * 2 - 1, -((e.clientY / (innerHeight || 1)) * 2 - 1));
+    });
+
+    function handleResize() {
+        const w = canvas.clientWidth || 1;
+        const h = canvas.clientHeight || 1;
         renderer.setSize(w, h, false);
-        renderer.getDrawingBufferSize(size);
-        material.uniforms.uRes.value.copy(size);
-        material.uniforms.uTime.value = (seconds + 20) * CONFIG.speed;
+        material.uniforms.uCanvas.value.set(w, h);
         renderer.render(scene, camera);
     }
+    handleResize();
+    if ("ResizeObserver" in window) new ResizeObserver(handleResize).observe(canvas);
+    else addEventListener("resize", handleResize);
 
-    function frame(now) {
-        raf = requestAnimationFrame(frame);
-        if (now - last < FRAME_MS) return;
-        last = now;
-        draw((now - start) / 1000);
+    let elapsed = 0;
+    let raf = null;
+    let resumed = false;
+
+    function loop() {
+        raf = null;
+        if (document.hidden || !wantsMotion()) return;
+        const delta = clock.getDelta();
+        const dt = resumed ? 0 : delta;
+        resumed = false;
+        elapsed += dt;
+        material.uniforms.uTime.value = elapsed;
+
+        const deg = (PROPS.rotation % 360) + PROPS.autoRotate * elapsed;
+        const rad = (deg * Math.PI) / 180;
+        material.uniforms.uRot.value.set(Math.cos(rad), Math.sin(rad));
+
+        pointerCurrent.lerp(pointerTarget, Math.min(1, dt * POINTER_SMOOTH));
+        material.uniforms.uPointer.value.copy(pointerCurrent);
+        renderer.render(scene, camera);
+        raf = requestAnimationFrame(loop);
     }
 
-    const startLoop = () => { if (!raf && wantsMotion()) raf = requestAnimationFrame(frame); };
-    const stopLoop = () => { cancelAnimationFrame(raf); raf = 0; };
+    function start() {
+        if (raf !== null || document.hidden || !wantsMotion()) return;
+        resumed = true;
+        raf = requestAnimationFrame(loop);
+    }
+    function stop() { if (raf !== null) cancelAnimationFrame(raf); raf = null; }
 
-    document.addEventListener("visibilitychange", () => (document.hidden ? stopLoop() : startLoop()));
-    addEventListener("resize", () => draw((performance.now() - start) / 1000));
-    canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); stopLoop(); fallback("WebGL context lost"); });
+    document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+    canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); stop(); fallback("WebGL context lost"); });
 
     // Settings > Appearance > Animated background
-    paroxysmSettings.onChange(() => { if (wantsMotion()) startLoop(); else stopLoop(); });
+    paroxysmSettings.onChange(() => {
+        setColors(accentColors());
+        if (wantsMotion()) start(); else { stop(); renderer.render(scene, camera); }
+    });
 
-    draw(12);                    // first frame straight away (also the still frame when motion is off)
+    // first frame straight away (also the still frame when motion is off)
+    material.uniforms.uTime.value = elapsed;
+    material.uniforms.uRot.value.set(Math.cos((PROPS.rotation * Math.PI) / 180), Math.sin((PROPS.rotation * Math.PI) / 180));
+    renderer.render(scene, camera);
     canvas.classList.add("ready");
-    startLoop();
+    start();
 })();

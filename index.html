@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>paroxysm</title>
-    <link rel="preload" href="fonts/inter-tight-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="paroxysm.css">
     <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
     <script src="paroxysm-settings.js"></script>
@@ -13,13 +13,19 @@
 
 <body class="browser">
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
-        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
-        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
-        <symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
-        <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol>
-        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
-        <symbol id="i-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol>
+        <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol>
+        <symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+        <symbol id="i-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></symbol>
+        <symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol>
+        <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
+        <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11" /><line x1="8" x2="8" y1="9" y2="13" /><line x1="15" x2="15.01" y1="12" y2="12" /><line x1="18" x2="18.01" y1="10" y2="10" /><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" /></symbol>
+        <symbol id="i-music" viewBox="0 0 24 24"><path d="M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19" /><circle cx="18" cy="16" r="3" /><circle cx="6" cy="19" r="3" /></symbol>
+        <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></symbol>
     </svg>
 
     <header class="toolbar">
@@ -31,12 +37,14 @@
         </div>
 
         <div class="url-bar">
+            <span class="url-icon"><svg class="icon" aria-hidden="true"><use id="urlIconUse" href="#i-house"/></svg></span>
             <input type="text" id="urlInput" placeholder="Search or enter address"
                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-            <button class="go-btn" id="goBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
         </div>
 
-        <div class="toolbar-right"></div>
+        <div class="toolbar-right">
+            <button class="nav-btn" id="menuBtn" title="Menu" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        </div>
     </header>
 
     <aside class="rail">
@@ -46,10 +54,7 @@
                 <span>New tab</span>
             </button>
         </div>
-        <button class="rail-link" id="browserSettingsBtn" title="Settings">
-            <svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg>
-            <span>Settings</span>
-        </button>
+        <div class="rail-links" id="railLinks"></div>
         <div class="rail-resizer" id="railResizer" title="Drag to resize (double-click to reset)"></div>
     </aside>
 
@@ -58,6 +63,7 @@
     <div class="pill" id="pill" role="status" aria-live="polite"></div>
 
     <script src="paroxysm.config.js"></script>
+    <script src="paroxysm-cloak.js"></script>
     <script src="scramjet/scramjet.js"></script>
     <script src="controller/controller.api.js"></script>
     <script src="epoxy/index.js"></script>
@@ -67,29 +73,46 @@
         const { defaultConfig } = $scramjet;
         const EpoxyTransport = self.EpoxyTransport.default;
 
-        //── Wisp servers (edit them in paroxysm.config.js) ─────────────────────
-        // Ordered fallback list from paroxysm.config.js; the first endpoint that responds is used.
-        const WISP_SERVERS = (window.PAROXYSM_CONFIG?.wispServers ?? []).map(url => {
-            let name = url;
-            try { name = new URL(url).host; } catch {}
-            return { name, url };
-        });
+        //── Wisp servers ───────────────────────────────────────────────────────
+        // The built-in list lives in paroxysm.config.js, encoded (see encode_wisp.py), and is shown in
+        // the UI as "Wisp Server 1", "Wisp Server 2", ... Servers the user adds in Settings > Proxy
+        // are kept in the settings and shown as "Custom Server 1", ... Ordered fallback: the picked
+        // server (if any) is tried first, then the rest in order. The UI never shows the URLs.
+        const decodeWisp = s => { try { return atob(s).split("").reverse().join(""); } catch { return ""; } };
+        const BUILTIN_WISP = (window.PAROXYSM_CONFIG?.wispServers ?? []).map(decodeWisp).filter(Boolean);
+        const WISP_SERVERS = [];          // { id, name, url, custom }; init() reads WISP_SERVERS[activeServerIdx].url
         let activeServerIdx = 0;
+        let activeServerId = null;
+
+        function rebuildServers() {
+            const custom = (paroxysmSettings.get().customWisp ?? []).filter(u => /^wss?:\/\/\S+$/i.test(u));
+            WISP_SERVERS.length = 0;
+            BUILTIN_WISP.forEach((url, i) => WISP_SERVERS.push({ id: "b" + i, name: "Wisp Server " + (i + 1), url, custom: false }));
+            custom.forEach((url, i) => WISP_SERVERS.push({ id: "c" + i, name: "Custom Server " + (i + 1), url, custom: true }));
+            const at = WISP_SERVERS.findIndex(x => x.id === activeServerId);
+            if (at >= 0) activeServerIdx = at;
+        }
+        rebuildServers();
 
         const LOCAL_SCHEME     = "paroxysm://";
-        const LOCAL_PAGES      = ["newtab", "settings"];
+        // Local pages. "newtab" stays as an accepted alias for home.
+        const LOCAL_ROUTES = {
+            home:     { file: "newtab.html",   title: "Home",     icon: "house" },
+            games:    { file: "games.html",    title: "Games",    icon: "gamepad-2" },
+            music:    { file: "music.html",    title: "Music",    icon: "music" },
+            ai:       { file: "ai.html",       title: "AI",       icon: "bot" },
+            settings: { file: "settings.html", title: "Settings", icon: "settings" }
+        };
+        const HOME_URL         = LOCAL_SCHEME + "home";
         const SETTINGS_URL     = LOCAL_SCHEME + "settings";
-        const DEFAULT_FAVICON  = "assets/paroxysm/paroxysm_darkmode_icon.png";
-        // Settings tab icon: Lucide's "settings" gear, built in code (no image file needed)
-        const SETTINGS_FAVICON = "data:image/svg+xml," + encodeURIComponent(
-            `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f4f4f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>`);
 
         const tabBar        = document.getElementById("tabBar");
         const newTabBtn     = document.getElementById("newTabBtn");
         const framesEl      = document.getElementById("frames");
         const urlInput      = document.getElementById("urlInput");
+        const urlIconUse    = document.getElementById("urlIconUse");
         const pillEl        = document.getElementById("pill");
-        const settingsBtn   = document.getElementById("browserSettingsBtn");
+        const railLinks     = document.getElementById("railLinks");
 
         let scramjet = null;
         let ready = false;
@@ -137,19 +160,31 @@
             ]);
         }
 
-        // Index of the first reachable endpoint. Retries forever unless `once` is set (then -1).
-        async function findWispServer(once = false) {
+        // The order to try servers in: the picked one first (if any), then the rest in list order.
+        function serverOrder(auto) {
+            const all = WISP_SERVERS.map((_, i) => i);
+            const pick = auto ? -1 : WISP_SERVERS.findIndex(x => x.id === paroxysmSettings.get().wispPreferred);
+            return pick > 0 ? [pick, ...all.filter(i => i !== pick)] : all;
+        }
+
+        // Index of the first reachable server. Retries forever unless `once` is set (then -1).
+        // `auto` ignores the picked server (used by "Find best server").
+        async function findWispServer(once = false, auto = false) {
             if (!WISP_SERVERS.length) {
                 setStatus("error", "No wisp servers are configured (see paroxysm.config.js).");
                 return once ? -1 : new Promise(() => {});
             }
             while (true) {
-                for (let i = 0; i < WISP_SERVERS.length; i++) {
+                const order = serverOrder(auto);
+                for (const i of order) {
                     try {
                         await probeWithin(WISP_SERVERS[i].url, PROBE_CAP_MS);
+                        if (!auto && i !== order[0] && paroxysmSettings.get().wispPreferred) {
+                            showPill("warn", `${WISP_SERVERS[order[0]].name} is unavailable. Using ${WISP_SERVERS[i].name}.`, 5000);
+                        }
                         return i;
                     } catch (e) {
-                        console.error(`[paroxysm] wisp endpoint ${i + 1}/${WISP_SERVERS.length} unavailable:`, e);
+                        console.error(`[paroxysm] wisp server ${i + 1}/${WISP_SERVERS.length} unavailable:`, e);
                     }
                 }
                 if (once) return -1;
@@ -161,6 +196,7 @@
         const initWithServer = init;
         init = async function () {
             activeServerIdx = await findWispServer();
+            activeServerId = WISP_SERVERS[activeServerIdx]?.id ?? null;
             return initWithServer();
         };
 
@@ -186,17 +222,18 @@
                 const t0 = performance.now();
                 try {
                     await probeWisp(s.url);
-                    return { name: s.name, url: s.url, ok: true, ms: Math.round(performance.now() - t0) };
+                    return { id: s.id, name: s.name, ok: true, ms: Math.round(performance.now() - t0) };
                 } catch (e) {
-                    return { name: s.name, url: s.url, ok: false, error: e.message };
+                    return { id: s.id, name: s.name, ok: false, error: e.message };
                 }
             }));
         }
 
         // Re-run the ordered search; switch only if a better (earlier) endpoint is available.
         async function findBestServer() {
-            const idx = await findWispServer(true);
+            const idx = await findWispServer(true, true);
             if (idx === -1) { showPill("warn", "No wisp server responded.", 5000); return false; }
+            paroxysmSettings.set({ wispPreferred: "" });          // back to automatic
             if (idx === activeServerIdx && ready) {
                 showPill("ok", `Already on the best available server (${WISP_SERVERS[idx].name})`);
                 return true;
@@ -207,13 +244,61 @@
             return true;
         }
 
+        // Use a server the user picked. It is checked first, so a dead one never leaves you offline.
+        async function selectServer(i) {
+            const srv = WISP_SERVERS[i];
+            if (!srv) return false;
+            if (i === activeServerIdx && ready) {
+                paroxysmSettings.set({ wispPreferred: srv.id });
+                showPill("ok", `Already using ${srv.name}`);
+                return true;
+            }
+            try {
+                await probeWithin(srv.url, PROBE_CAP_MS);
+            } catch (e) {
+                showPill("warn", `Can't reach ${srv.name}. Staying on the current server.`, 5000);
+                return false;
+            }
+            paroxysmSettings.set({ wispPreferred: srv.id });
+            scramjet = null;
+            ready = false;
+            init();
+            return true;
+        }
+
+        // Servers the user adds (kept in settings; shown as "Custom Server N").
+        function addCustomServer(input) {
+            const url = String(input ?? "").trim();
+            if (!/^wss?:\/\/\S+$/i.test(url)) return { ok: false, error: "That needs to start with wss:// (or ws://) and have no spaces." };
+            if (WISP_SERVERS.some(x => x.url === url)) return { ok: false, error: "That server is already in the list." };
+            paroxysmSettings.set({ customWisp: [...(paroxysmSettings.get().customWisp ?? []), url] });
+            rebuildServers();
+            return { ok: true };
+        }
+
+        function removeCustomServer(index) {
+            const srv = WISP_SERVERS[index];
+            if (!srv?.custom) return { ok: false, error: "Built-in servers can't be removed." };
+            if (index === activeServerIdx && ready) return { ok: false, error: "That server is in use. Pick another one first." };
+            const s = paroxysmSettings.get();
+            paroxysmSettings.set({
+                customWisp: (s.customWisp ?? []).filter(u => u !== srv.url),
+                wispPreferred: s.wispPreferred === srv.id ? "" : s.wispPreferred
+            });
+            rebuildServers();
+            return { ok: true };
+        }
+
         window.paroxysm = {
-            servers:     () => WISP_SERVERS.map(s => ({ name: s.name, url: s.url })),
+            servers:     () => WISP_SERVERS.map(s => ({ id: s.id, name: s.name, custom: s.custom })),   // never the URLs
             activeIndex: () => activeServerIdx,
             isReady:     () => ready,
             checkConnection,
             testAll,
             findBestServer,
+            selectServer,
+            addCustomServer,
+            removeCustomServer,
             about: () => ({
                 version:    window.PAROXYSM_CONFIG?.version ?? "dev",
                 scramjet:   self.$scramjet?.versionInfo?.version ?? "unknown",
@@ -247,12 +332,26 @@
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
         }
 
-        // Settings is a real tab: focus it if it is already open, otherwise open one.
-        function openSettings() {
-            const existing = tabs.find(t => t.url === SETTINGS_URL);
+        // Local pages (Settings, Games, ...) are real tabs: focus one if it is already open, otherwise open one.
+        function openPage(key) {
+            const url = LOCAL_SCHEME + key;
+            const existing = tabs.find(t => t.url === url);
             if (existing) { switchTab(existing.id); return; }
             createTab();
-            go(SETTINGS_URL);
+            go(url);
+        }
+
+        // Sidebar links, in the order chosen in Settings > Appearance > Sidebar.
+        function renderRailLinks() {
+            railLinks.replaceChildren(...paroxysmSettings.sidebarOrder().map(key => {
+                const r = LOCAL_ROUTES[key];
+                const b = document.createElement("button");
+                b.className = "rail-link";
+                b.title = r.title;
+                b.innerHTML = `<svg class="icon" aria-hidden="true"><use href="#i-${r.icon}"/></svg><span>${r.title}</span>`;
+                b.addEventListener("click", () => openPage(key));
+                return b;
+            }));
         }
 
         // The proxied URL follows "<origin><controller prefix><id>/<frame id>/".
@@ -261,6 +360,31 @@
             const prefix = $scramjetController.config?.prefix ?? "/~/sj/";
             const escaped = prefix.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
             return new RegExp("https?:\\/\\/[^/]+" + escaped + "[^/]+\\/[^/]+\\/(https?.+)");
+        }
+
+        // Lucide icon for a page: home and settings have their own, everything else a globe.
+        // Used for the tab icon (until a site's favicon loads) and for the icon in the address bar.
+        function routeKeyFor(url) {
+            if (!url || url === "newtab") return "home";
+            if (!url.startsWith(LOCAL_SCHEME)) return null;
+            let page = url.slice(LOCAL_SCHEME.length).split("/")[0];
+            if (page === "newtab") page = "home";
+            return LOCAL_ROUTES[page] ? page : null;
+        }
+
+        function iconNameFor(url) {
+            const key = routeKeyFor(url);
+            return key ? LOCAL_ROUTES[key].icon : "globe";
+        }
+
+        function syncOmnibox(tab) {
+            urlIconUse.setAttribute("href", "#i-" + iconNameFor(tab?.url));
+        }
+
+        function setTabIcon(tab, name) {
+            if (!tab.tabEl) return;
+            tab.tabEl.classList.add("local");
+            tab.iconUse.setAttribute("href", "#i-" + name);
         }
 
         function getActiveTab() {
@@ -273,15 +397,22 @@
             el.className = "tab" + (tab.id === activeTabId ? " active" : "");
             el.dataset.id = tab.id;
 
+            // Two icon slots: a site favicon (img) or a Lucide icon (svg). Home and settings, and
+            // sites whose favicon lookup fails, show the Lucide icon; the paroxysm logo is never used.
             const favicon = document.createElement("img");
             favicon.className = "tab-favicon";
-            favicon.src = DEFAULT_FAVICON;
             favicon.alt = "";
-            favicon.onerror = () => { favicon.onerror = null; favicon.src = DEFAULT_FAVICON; }; // lookup blocked or failed
+            favicon.onerror = () => setTabIcon(tab, "globe");   // lookup blocked or failed
+
+            const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            icon.setAttribute("class", "icon tab-icon");
+            icon.setAttribute("aria-hidden", "true");
+            const iconUse = document.createElementNS("http://www.w3.org/2000/svg", "use");
+            icon.appendChild(iconUse);
 
             const title = document.createElement("span");
             title.className = "tab-title";
-            title.textContent = tab.title || "New tab";
+            title.textContent = tab.title || "Home";
 
             const closeBtn = document.createElement("span");
             closeBtn.className = "tab-close";
@@ -293,13 +424,16 @@
             });
 
             el.appendChild(favicon);
+            el.appendChild(icon);
             el.appendChild(title);
             el.appendChild(closeBtn);
             el.addEventListener("click", () => switchTab(tab.id));
 
             tab.tabEl = el;
             tab.faviconEl = favicon;
+            tab.iconUse = iconUse;
             tabBar.insertBefore(el, newTabBtn);
+            setTabIcon(tab, iconNameFor(tab.url));
         }
 
         function updateTabTitle(tab, title) {
@@ -310,7 +444,9 @@
         function updateTabFavicon(tab, url) {
             if (!tab.faviconEl) return;
             const faviconUrl = getFaviconUrl(url);
-            if (faviconUrl) tab.faviconEl.src = faviconUrl;
+            if (!faviconUrl) return;
+            tab.tabEl?.classList.remove("local");
+            tab.faviconEl.src = faviconUrl;
         }
 
         function syncTabBarActive() {
@@ -322,14 +458,35 @@
         let activeTabId = null;
         let nextTabId   = 0;
 
+        // Frames start hidden and fade in once they have loaded; they hide again as soon as the page
+        // inside starts to unload (refresh, link click). That way the gap between two pages shows the
+        // paroxysm colour instead of the browser's white. Nothing here touches the proxy engine.
+        function watchFrame(tab) {
+            const f = tab.iframe;
+            let safety = 0;
+            const show = () => { clearTimeout(safety); f.classList.add("shown"); };
+            const hide = () => {
+                f.classList.remove("shown");
+                clearTimeout(safety);
+                safety = setTimeout(show, 6000);          // never stay hidden if a load event is missed
+            };
+            f.addEventListener("load", () => {
+                f.classList.toggle("web", !!tab.frame);   // proxied sites get a white canvas, local pages don't
+                try { f.contentWindow.addEventListener("pagehide", hide); } catch {}
+                try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {}   // panic key, character masking
+                show();
+            });
+        }
+
         function createTab(url = null) {
             const id = nextTabId++;
             const iframe = document.createElement("iframe");
             iframe.title = "paroxysm";
             framesEl.appendChild(iframe);
 
-            const tab = { id, iframe, frame: null, url: url || "newtab", title: "New tab", tabEl: null, faviconEl: null, _pollInterval: null };
+            const tab = { id, iframe, frame: null, url: url || "newtab", title: "Home", tabEl: null, faviconEl: null, iconUse: null, _pollInterval: null };
             tabs.push(tab);
+            watchFrame(tab);
 
             renderTab(tab);
             switchTab(id);
@@ -382,7 +539,8 @@
             syncTabBarActive();
             const tab = getActiveTab();
             if (tab) {
-                urlInput.value = tab.url === "newtab" ? "" : tab.url.startsWith(LOCAL_SCHEME) ? tab.url : (tab.url || "");
+                urlInput.value = tab.url === "newtab" ? HOME_URL : (tab.url || "");
+                syncOmnibox(tab);
             }
         }
 
@@ -404,16 +562,18 @@
             if (!tab) return;
 
             if (input.startsWith(LOCAL_SCHEME)) {
-                const page = input.slice(LOCAL_SCHEME.length).split("/")[0];
-                if (!LOCAL_PAGES.includes(page)) return;
+                const page = routeKeyFor(input);
+                if (!page) return;
+                const route = LOCAL_ROUTES[page];
                 clearInterval(tab._pollInterval);
                 tab._pollInterval = null;
                 tab.frame = null;
-                urlInput.value = input;
-                tab.url = input;
-                updateTabTitle(tab, page === "settings" ? "Settings" : "New tab");
-                tab.faviconEl.src = page === "settings" ? SETTINGS_FAVICON : DEFAULT_FAVICON;
-                tab.iframe.src = `${page}.html`;
+                tab.url = LOCAL_SCHEME + page;
+                urlInput.value = tab.url;
+                updateTabTitle(tab, route.title);
+                setTabIcon(tab, route.icon);
+                syncOmnibox(tab);
+                tab.iframe.src = route.file;
                 return;
             }
 
@@ -423,6 +583,7 @@
             tab.url = url;
             updateTabTitle(tab, url);
             updateTabFavicon(tab, url);
+            syncOmnibox(tab);
             if (!tab.frame) {
                 if (!ready) {
                     showPill("warn", "Still connecting. The page will load once a wisp server is ready.", 4000);
@@ -434,14 +595,15 @@
             }
         }
 
-        document.getElementById("goBtn").onclick = () => go(urlInput.value);
         urlInput.addEventListener("keydown", e => { if (e.key === "Enter") go(urlInput.value); });
         document.getElementById("backBtn").onclick    = () => getActiveTab()?.iframe?.contentWindow?.history.back();
         document.getElementById("forwardBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
         document.getElementById("reloadBtn").onclick  = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
         newTabBtn.onclick = () => createTab();
 
-        settingsBtn.addEventListener("click", openSettings);
+        renderRailLinks();
+        paroxysmCloak.init();
+        paroxysmSettings.onChange(() => { renderRailLinks(); rebuildServers(); });
 
         // sidebar: collapse to icons (remembered)
         const RAIL_KEY = "paroxysm:rail-collapsed";
