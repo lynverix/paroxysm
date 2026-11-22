@@ -9,9 +9,399 @@
     <link rel="stylesheet" href="paroxysm.css">
     <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
     <script src="paroxysm-settings.js"></script>
+    <script src="paroxysm-rise.js"></script>
+    <style>
+        body.games { background: var(--surface); min-height: 100vh; }
+        .wrap { max-width: 1120px; margin: 0 auto; padding: 32px var(--s5) var(--s7); }
+
+        /* header, search, tabs */
+        .g-head { margin-bottom: var(--s4); }
+        .g-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+        .g-search { display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s2) 0 var(--s4); margin-bottom: var(--s4); background: var(--surface-2); border-radius: var(--pill); color: var(--text-3); }
+        .g-search input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; color: var(--text); font-size: 14px; }
+        .g-search input::placeholder { color: var(--text-2); }
+        .g-search .icon { width: 17px; height: 17px; }
+        .round-btn { display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 50%; color: var(--text-2); transition: background .12s var(--ease), color .12s var(--ease); }
+        .round-btn:hover { background: var(--surface-3); color: var(--text); }
+        .round-btn .icon { width: 17px; height: 17px; }
+        .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin-bottom: var(--s4); background: var(--surface-2); border-radius: var(--pill); }
+        .seg button { height: 36px; border-radius: var(--pill); color: var(--text-2); font-size: 13px; font-weight: 500; transition: background .12s var(--ease), color .12s var(--ease); }
+        .seg button small { margin-left: 4px; font-size: 11px; opacity: .7; }
+        .seg button:not(.on):hover { background: var(--accent-soft); color: var(--text); }
+        .seg button.on { background: var(--accent); color: var(--on-accent); }
+        .chips { display: flex; gap: var(--s2); margin-bottom: var(--s5); }
+        .chips .chip-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 var(--s4); border-radius: var(--pill); background: var(--surface-2); color: var(--text-2); font-size: 13px; font-weight: 500; }
+        .chips .chip-btn small { font-size: 11px; opacity: .7; }
+        .chips .chip-btn.on { background: var(--accent); color: var(--on-accent); }
+
+        /* grid and cards */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: var(--s4); }
+        .g-card { position: relative; display: flex; flex-direction: column; gap: 8px; text-align: left; cursor: pointer; animation: pop .25s var(--ease) both; }
+        @keyframes pop { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
+        .g-card .cover { aspect-ratio: 1; width: 100%; border-radius: 18px; background: var(--surface-2); overflow: hidden; transition: transform .15s var(--ease); }
+        .g-card .cover img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .25s var(--ease); }
+        .g-card .cover img.ok { opacity: 1; }
+        .g-card:hover .cover, .g-card:focus-visible .cover { transform: translateY(-2px); }
+        .g-card .name { font-size: 13px; font-weight: 500; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+        .g-card:hover .name { color: var(--text); }
+        .fav { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(0, 0, 0, .5); backdrop-filter: blur(8px); color: #fff; opacity: 0; transition: opacity .12s var(--ease), background .12s var(--ease); }
+        .fav .icon { width: 16px; height: 16px; }
+        .g-card:hover .fav, .g-card:focus-within .fav, .fav.on { opacity: 1; }
+        .fav:hover { background: rgba(0, 0, 0, .7); }
+        .fav.on .icon { fill: var(--accent); stroke: var(--accent); }
+        .more { display: flex; justify-content: center; margin-top: var(--s5); }
+        .status { padding: var(--s7) 0; text-align: center; color: var(--text-3); }
+        .notice { padding: var(--s5); background: var(--surface-2); border-radius: var(--r-card); color: var(--text-2); line-height: 1.7; }
+        .notice h3 { color: var(--text); font-size: 15px; margin-bottom: var(--s2); }
+        .notice .btn { margin-top: var(--s4); }
+
+        /* player */
+        .pl-top { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
+        .pl-top .btn { height: 36px; padding: 0 var(--s4); }
+        .pl-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+        .pl-top .fav-btn.on .icon { fill: var(--accent); stroke: var(--accent); }
+        .stage { display: grid; grid-template-columns: 104px minmax(0, 1fr) 104px; gap: var(--s4); align-items: start; }
+        .side { display: flex; flex-direction: column; gap: var(--s3); }
+        .side .g-card .cover { border-radius: 14px; }
+        .side .g-card .name { display: none; }
+        .frame { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: var(--r-card); overflow: hidden; }
+        .frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+        .frame:fullscreen { border-radius: 0; aspect-ratio: auto; }
+        .frame .loading { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; padding: var(--s5); background: #000; color: #888; text-align: center; }
+        .frame .loading[hidden] { display: none; }
+        .frame .notice { max-width: 440px; text-align: left; }
+        h2.sub { margin: var(--s6) 0 var(--s4); font-size: 18px; font-weight: 600; letter-spacing: -.02em; }
+        @media (max-width: 1000px) { .stage { grid-template-columns: minmax(0, 1fr); } .side { display: none; } }
+    </style>
 </head>
 
-<!-- Games page: empty for now. -->
-<body class="empty-page"></body>
+<body class="games">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+        <symbol id="i-dices" viewBox="0 0 24 24"><rect width="12" height="12" x="2" y="10" rx="2" ry="2" /><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6" /><path d="M6 18h.01" /><path d="M10 14h.01" /><path d="M15 6h.01" /><path d="M18 9h.01" /></symbol>
+        <symbol id="i-heart" viewBox="0 0 24 24"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol>
+        <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /></symbol>
+        <symbol id="i-minimize" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></symbol>
+        <symbol id="i-rotate-cw" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></symbol>
+    </svg>
+
+    <div class="wrap" id="app"></div>
+
+    <script>
+        // Games page. The catalogue and the games come from LuminSDK (headless mode); the interface is ours.
+        // Browse view: paroxysm://games      Player view: paroxysm://games?g=<game id>
+        // The SDK script is pinned to a commit and checked with an integrity hash (it runs in paroxysm's own origin).
+        const SDK_URL = "https://cdn.jsdelivr.net/gh/luminsdk/script@e1107337f26529e032d7873cbbb310d485d5d403/fonts.min.js";
+        const SDK_SRI = "sha384-SgXJY217C22inNWfmmJ3ffxB1rIh4BmSkT9PDfvMqXoNI1p/td9wKrAjt8SboUHv";
+        const PAGE_SIZE = 36;
+        const MAX_RECENTS = 24;
+
+        const $ = id => document.getElementById(id);
+        const app = $("app");
+        const SVG = "http://www.w3.org/2000/svg";
+
+        function icon(name) {
+            const svg = document.createElementNS(SVG, "svg");
+            svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true");
+            const use = document.createElementNS(SVG, "use"); use.setAttribute("href", "#i-" + name);
+            svg.appendChild(use); return svg;
+        }
+        function h(tag, props = {}, ...kids) {
+            const el = document.createElement(tag);
+            for (const [k, v] of Object.entries(props)) {
+                if (k === "class") el.className = v;
+                else if (k === "text") el.textContent = v;
+                else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+                else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+            }
+            kids.flat().forEach(c => c != null && el.append(c));
+            return el;
+        }
+
+        // ── talking to the paroxysm shell (index.html) ──
+        // Local pages ask the shell to open a tab, move this tab, or rename it.
+        const inShell = window.parent !== window;
+        function shell(msg, fallbackUrl) {
+            if (inShell) window.parent.postMessage(msg, location.origin);
+            else if (fallbackUrl) location.href = fallbackUrl;
+        }
+        const gameUrl = id => "paroxysm://games?g=" + encodeURIComponent(id);
+        const openGame = g => shell({ type: "paroxysm-open", url: gameUrl(g.id) }, "games.html?g=" + encodeURIComponent(g.id));
+        const goGames = () => shell({ type: "paroxysm-open", url: "paroxysm://games" }, "games.html");
+
+        // ── favourites and recents (kept in the browser, shared by every Games tab) ──
+        const STORE_KEY = "paroxysm:games";
+        const slim = g => ({ id: g.id, name: g.name, category: g.category || "" });
+        function readStore() {
+            try {
+                const d = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+                return { favorites: Array.isArray(d.favorites) ? d.favorites : [], recents: Array.isArray(d.recents) ? d.recents : [] };
+            } catch { return { favorites: [], recents: [] }; }
+        }
+        function writeStore(s) { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} }
+        const isFav = id => readStore().favorites.some(g => g.id === id);
+        function toggleFav(g) {
+            const s = readStore();
+            const i = s.favorites.findIndex(x => x.id === g.id);
+            if (i >= 0) s.favorites.splice(i, 1); else s.favorites.unshift(slim(g));
+            writeStore(s);
+            refreshFavs();
+        }
+        function pushRecent(g) {
+            const s = readStore();
+            s.recents = [slim(g), ...s.recents.filter(x => x.id !== g.id)].slice(0, MAX_RECENTS);
+            writeStore(s);
+        }
+
+        // ── LuminSDK ──
+        let sdk = null;
+        function loadSdk() {
+            sdk ??= (async () => {
+                if (!window.Lumin) {
+                    await new Promise((resolve, reject) => {
+                        const s = document.createElement("script");
+                        s.src = SDK_URL; s.integrity = SDK_SRI; s.crossOrigin = "anonymous";
+                        s.onload = resolve; s.onerror = () => reject(new Error("The game library could not be loaded."));
+                        document.head.appendChild(s);
+                    });
+                }
+                await Promise.race([Lumin.init({ headless: true }), new Promise((_, rej) => setTimeout(() => rej(new Error("The game library did not respond.")), 20000))]);
+            })();
+            sdk.catch(() => { sdk = null; });
+            return sdk;
+        }
+
+        // Covers: resolved lazily (only when a card scrolls into view), a few at a time.
+        const tokens = new Map(), covers = new Map();
+        let running = 0; const queue = [];
+        function schedule(fn) { queue.push(fn); pump(); }
+        function pump() { while (running < 6 && queue.length) { running++; queue.shift()().finally(() => { running--; pump(); }); } }
+        async function coverFor(game) {
+            if (covers.has(game.id)) return covers.get(game.id);
+            let token = game.image_token || tokens.get(game.id);
+            if (!token) {                                   // favourites and recents only keep id and name
+                const r = await Lumin.getGames({ q: game.name, limit: 24 });
+                r.games.forEach(x => tokens.set(x.id, x.image_token));
+                token = tokens.get(game.id);
+            }
+            if (!token) return "";
+            const url = await Lumin.getImageUrl(token);
+            covers.set(game.id, url);
+            return url;
+        }
+        const seen = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
+            for (const e of entries) {
+                if (!e.isIntersecting) continue;
+                seen.unobserve(e.target);
+                const { game, img } = e.target._cover;
+                schedule(async () => { try { const u = await coverFor(game); if (u) { img.src = u; img.onload = () => img.classList.add("ok"); } } catch {} });
+            }
+        }, { rootMargin: "300px" }) : null;
+
+        function favButton(game, cls = "fav") {
+            const b = h("button", { class: cls + (isFav(game.id) ? " on" : ""), "data-fav": game.id, title: "Favorite", "aria-label": "Favorite " + game.name, "aria-pressed": String(isFav(game.id)),
+                onclick: e => { e.stopPropagation(); toggleFav(game); } }, icon("heart"));
+            return b;
+        }
+        function refreshFavs() {
+            document.querySelectorAll("[data-fav]").forEach(b => {
+                const on = isFav(b.dataset.fav);
+                b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+            });
+            if (view.mode === "browse") { updateCounts(); if (view.tab === "favorites") renderList(); }
+        }
+        addEventListener("storage", e => { if (e.key === STORE_KEY) refreshFavs(); });
+
+        function card(game, onOpen = openGame) {
+            const img = h("img", { alt: "", decoding: "async" });
+            const el = h("div", { class: "g-card", role: "button", tabindex: "0", title: game.name,
+                onclick: () => onOpen(game),
+                onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(game); } } },
+                h("div", { class: "cover" }, img), favButton(game), h("span", { class: "name", text: game.name }));
+            el._cover = { game, img };
+            if (seen) seen.observe(el); else schedule(async () => { try { const u = await coverFor(game); if (u) { img.src = u; img.classList.add("ok"); } } catch {} });
+            return el;
+        }
+
+        const status = text => h("p", { class: "status", text });
+        function failure(message, retry) {
+            return h("div", { class: "notice" }, h("h3", { text: "Games couldn't load" }),
+                h("p", { text: message + " Check your connection and try again." }),
+                h("button", { class: "btn", text: "Try again", onclick: retry }));
+        }
+
+        // ══ Browse view ══
+        const view = { mode: "browse", tab: "browse", query: "", games: [], total: 0, page: 0, pages: 1, req: 0 };
+        const els = {};
+
+        function renderBrowse() {
+            view.mode = "browse";
+            document.title = "Games"; shell({ type: "paroxysm-title", title: "Games" });
+            els.search = h("input", { type: "text", placeholder: "Search games", autocomplete: "off", spellcheck: "false", "aria-label": "Search games" });
+            els.search.addEventListener("input", () => { clearTimeout(els.t); els.t = setTimeout(() => { view.query = els.search.value.trim(); if (view.tab === "browse") loadBrowse(true); else { updateCounts(); renderList(); } }, 300); });
+            els.seg = ["browse", "recents", "favorites"].map(k => h("button", { "data-tab": k, onclick: () => setTab(k) }));
+            els.chip = h("button", { class: "chip-btn on", title: "Library" });
+            els.grid = h("div", { class: "grid" });
+            els.more = h("div", { class: "more" });
+            app.replaceChildren(
+                h("div", { class: "g-head", "data-rise": "" }, h("h1", { text: "Games" })),
+                h("label", { class: "g-search", "data-rise": "" }, icon("search"), els.search,
+                    h("button", { class: "round-btn", type: "button", title: "Random game", "aria-label": "Random game", onclick: randomGame }, icon("dices"))),
+                h("div", { class: "seg", "data-rise": "" }, ...els.seg),
+                h("div", { class: "chips", "data-rise": "" }, els.chip),
+                els.grid, els.more);
+            window.paroxysmRise?.run(app);
+            updateCounts();
+            renderList();
+            loadSdk().catch(() => {});                       // warm up; loadBrowse shows the error
+            loadBrowse(true);
+        }
+
+        function showFailure(e) {
+            els.more.replaceChildren();
+            els.grid.replaceChildren(failure(e.message || "Something went wrong.", () => { els.grid.replaceChildren(status("Loading...")); loadBrowse(true); }));
+        }
+
+        function setTab(k) { view.tab = k; updateCounts(); if (k === "browse" && !view.games.length) loadBrowse(true); else renderList(); }
+
+        const matches = g => !view.query || g.name.toLowerCase().includes(view.query.toLowerCase());
+        function listFor(tab) {
+            const s = readStore();
+            return (tab === "recents" ? s.recents : s.favorites).filter(matches);
+        }
+        function updateCounts() {
+            const s = readStore();
+            const label = { browse: "Browse", recents: "Recents", favorites: "Favorites" };
+            const count = { browse: 0, recents: s.recents.length, favorites: s.favorites.length };
+            els.seg.forEach(b => {
+                const k = b.dataset.tab;
+                b.classList.toggle("on", k === view.tab);
+                b.replaceChildren(document.createTextNode(label[k]), ...(count[k] ? [h("small", { text: String(count[k]) })] : []));
+            });
+            const n = view.tab === "browse" ? view.total : listFor(view.tab).length;
+            els.chip.replaceChildren(document.createTextNode("Library"), ...(n ? [h("small", { text: String(n) })] : []));
+        }
+
+        function renderList() {
+            els.more.replaceChildren();
+            if (view.tab === "browse") {
+                if (!view.games.length) { els.grid.replaceChildren(status(view.loading ? "Loading..." : (view.query ? "Nothing found." : "Loading..."))); return; }
+                els.grid.replaceChildren(...view.games.map(g => card(g)));
+                if (view.page < view.pages) els.more.append(h("button", { class: "btn", text: "Load more", onclick: () => { els.more.replaceChildren(); loadBrowse(false); } }));
+                return;
+            }
+            const list = listFor(view.tab);
+            if (!list.length) {
+                const empty = view.query ? "Nothing found." : view.tab === "recents" ? "Games you play show up here." : "Tap the heart on a game to keep it here.";
+                els.grid.replaceChildren(status(empty)); return;
+            }
+            els.grid.replaceChildren(...list.map(g => card(g)));
+        }
+
+        async function loadBrowse(reset) {
+            const req = ++view.req;
+            if (reset) { view.games = []; view.page = 0; view.pages = 1; view.loading = true; if (view.tab === "browse") renderList(); }
+            try {
+                await loadSdk();
+                const r = await Lumin.getGames({ page: view.page + 1, limit: PAGE_SIZE, q: view.query });
+                if (req !== view.req) return;
+                r.games.forEach(g => tokens.set(g.id, g.image_token));
+                view.games = reset ? r.games : view.games.concat(r.games);
+                view.total = r.total ?? view.games.length; view.page = r.page ?? view.page + 1; view.pages = r.pages ?? 1;
+                view.loading = false;
+                updateCounts();
+                if (view.tab === "browse") {
+                    if (reset) renderList(); else { r.games.forEach(g => els.grid.append(card(g))); els.more.replaceChildren(); if (view.page < view.pages) els.more.append(h("button", { class: "btn", text: "Load more", onclick: () => { els.more.replaceChildren(); loadBrowse(false); } })); }
+                }
+            } catch (e) { if (req === view.req) { view.loading = false; if (view.tab === "browse") showFailure(e); } }
+        }
+
+        async function randomGame() {
+            try { await loadSdk(); const r = await Lumin.getRandomGames(1); if (r.games[0]) openGame(r.games[0]); } catch (e) { showFailure(e); }
+        }
+
+        // ══ Player view ══
+        // Other games on the player page replace this game in the same tab.
+        const openGameHere = g => shell({ type: "newtab-navigate", url: gameUrl(g.id) }, "games.html?g=" + encodeURIComponent(g.id));
+
+        const errorText = e => String((e && (e.message || e.error || e.code)) || e || "Unknown error");
+
+        async function renderPlayer(id) {
+            view.mode = "player";
+            let game = { id, name: "" }, iframe = null, slow = 0;
+            const overlay = h("div", { class: "loading" });
+            const frame = h("div", { class: "frame" }, overlay);
+            const title = h("div", { class: "pl-title", text: "Loading..." });
+            const favBtn = h("button", { class: "round-btn fav-btn" + (isFav(id) ? " on" : ""), "data-fav": id, title: "Favorite", "aria-label": "Favorite", "aria-pressed": String(isFav(id)), onclick: () => toggleFav(game) }, icon("heart"));
+            const reloadBtn = h("button", { class: "round-btn", title: "Reload game", "aria-label": "Reload game", onclick: () => start() }, icon("rotate-cw"));
+            const fsBtn = h("button", { class: "round-btn", title: "Fullscreen", "aria-label": "Fullscreen", onclick: () => { document.fullscreenElement ? document.exitFullscreen() : frame.requestFullscreen?.(); } }, icon("maximize"));
+            const sideL = h("div", { class: "side" }), sideR = h("div", { class: "side" });
+            const more = h("div", { class: "grid" });
+            app.replaceChildren(
+                h("div", { class: "pl-top" },
+                    h("button", { class: "btn", onclick: goGames }, icon("arrow-left"), h("span", { text: "Back" })),
+                    title, favBtn, reloadBtn, fsBtn),
+                h("div", { class: "stage" }, sideL, frame, sideR),
+                h("h2", { class: "sub", text: "More games" }), more);
+            document.addEventListener("fullscreenchange", () => {
+                const full = document.fullscreenElement === frame;
+                fsBtn.replaceChildren(icon(full ? "minimize" : "maximize"));
+                fsBtn.title = full ? "Exit fullscreen" : "Fullscreen";
+                fsBtn.setAttribute("aria-label", fsBtn.title);
+            });
+
+            const say = (heading, text, withRetry) => {
+                overlay.hidden = false;
+                overlay.replaceChildren(h("div", { class: "notice" }, h("h3", { text: heading }), h("p", { text }),
+                    h("p", { class: "hint", text: "Game: " + id }),
+                    withRetry ? h("button", { class: "btn", text: "Try again", onclick: () => start() }) : null));
+            };
+
+            // Each call asks LuminSDK for a fresh single-use game link.
+            async function start() {
+                clearTimeout(slow);
+                overlay.hidden = false;
+                overlay.replaceChildren(document.createTextNode("Loading game..."));
+                try {
+                    await loadSdk();
+                    const res = await Lumin.getGameUrl(id);
+                    if (!res || !res.url) throw new Error("LuminSDK did not return a game link for this id.");
+                    game = { id, name: res.meta?.name || id, category: res.meta?.category || "" };
+                    title.textContent = game.name;
+                    document.title = game.name; shell({ type: "paroxysm-title", title: game.name });
+                    pushRecent(game);
+                    iframe?.remove();
+                    iframe = h("iframe", { title: game.name, allow: "autoplay; fullscreen; pointer-lock; gamepad", allowfullscreen: "" });
+                    iframe.addEventListener("load", () => { clearTimeout(slow); overlay.hidden = true; });
+                    iframe.src = res.url;
+                    frame.prepend(iframe);
+                    slow = setTimeout(() => say("Still loading", "The game is taking a long time. You can ask for a fresh link.", true), 20000);
+                } catch (e) {
+                    console.error("[paroxysm] game failed to load:", id, e);
+                    say("This game couldn't load", errorText(e), true);
+                    return;
+                }
+                if (!sideL.children.length) {                    // the other games, after the game itself has started
+                    try {
+                        const rnd = await Lumin.getRandomGames(18);
+                        const others = (rnd.games || []).filter(g => g.id !== id);
+                        others.slice(0, 8).forEach((g, i) => (i % 2 ? sideR : sideL).append(card(g, openGameHere)));
+                        others.slice(8).forEach(g => more.append(card(g, openGameHere)));
+                    } catch (e) { console.error("[paroxysm] other games failed to load:", e); }
+                }
+            }
+            start();
+        }
+
+        // ── start ──
+        const param = new URLSearchParams(location.search).get("g");
+        if (param) {
+            // Any id is fine here: it is only passed to the SDK and shown as text, never put into HTML.
+            if (param.length <= 300) renderPlayer(param);
+            else app.replaceChildren(h("div", { class: "notice" }, h("h3", { text: "That game link isn't valid" }), h("button", { class: "btn", text: "Back to games", onclick: goGames })));
+        } else renderBrowse();
+    </script>
+</body>
 
 </html>

@@ -17,7 +17,6 @@
         <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
         <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
         <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
-        <symbol id="i-music" viewBox="0 0 24 24"><path d="M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19" /><circle cx="18" cy="16" r="3" /><circle cx="6" cy="19" r="3" /></symbol>
         <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
         <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol>
         <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /><path d="M6.453 15h11.094" /><path d="M8.5 2h7" /></symbol>
@@ -42,7 +41,6 @@
             <nav class="settings-nav" id="settingsNav" aria-label="Settings sections">
                 <button class="nav-item active" data-section="appearance" data-rise><svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg><span>Appearance</span></button>
                 <button class="nav-item" data-section="search" data-rise><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span>Search</span></button>
-                <button class="nav-item" data-section="music" data-rise><svg class="icon" aria-hidden="true"><use href="#i-music"/></svg><span>Music</span></button>
                 <button class="nav-item" data-section="proxy" data-rise><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span>Proxy</span></button>
                 <button class="nav-item" data-section="cloaking" data-rise><svg class="icon" aria-hidden="true"><use href="#i-eye-off"/></svg><span>Cloaking</span></button>
                 <button class="nav-item" data-section="dev" data-rise><svg class="icon" aria-hidden="true"><use href="#i-flask-conical"/></svg><span>Dev</span></button>
@@ -75,7 +73,7 @@
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Sidebar</h3>
-                    <p class="card-desc">Move a link up or down to change where it sits in the sidebar.</p>
+                    <p class="card-desc">Move a link up or down to change where it sits in the sidebar. The sidebar is used when tabs are in the sidebar layout.</p>
                     <div class="choices" id="sidebarList"></div>
                 </div>
             </section>
@@ -92,9 +90,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Music: empty for now -->
-            <section class="settings-section" id="sec-music"></section>
 
             <!-- Proxy -->
             <section class="settings-section" id="sec-proxy">
@@ -125,12 +120,12 @@
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Character masking</h3>
-                    <p class="card-desc">Replaces some letters on proxied pages with lookalike Unicode characters. The page looks the same, but the text in the DOM inspector doesn't match. Higher values replace more letters.</p>
+                    <p class="card-desc">Replaces some letters in paroxysm's own interface (tab titles, menus, Settings and so on, not the web page you are viewing) with lookalike Unicode characters. It looks the same, but the text in the DOM inspector doesn't match. It updates as you drag. Higher values replace more letters.</p>
                     <div class="range-row">
                         <input type="range" id="maskRange" min="0" max="100" step="10" aria-label="Character masking">
                         <span class="range-val" id="maskVal">0%</span>
                     </div>
-                    <p class="hint">It can affect copy and paste, find in page and screen readers. It starts once a page has loaded.</p>
+                    <p class="hint">It can affect copy and paste, find in page and screen readers in paroxysm's own pages. Proxied pages are never changed.</p>
                 </div>
                 <div class="card" data-rise>
                     <div class="row">
@@ -191,6 +186,8 @@
         const cloak = () => window.parent && window.parent.paroxysmCloak;
         const config = () => (window.parent && window.parent.PAROXYSM_CONFIG) || window.PAROXYSM_CONFIG || {};
         const SVG = "http://www.w3.org/2000/svg";
+        // Text as written, even while character masking is on (masked text would not match what you type).
+        const plain = el => (cloak() && cloak().plainText ? cloak().plainText(el) : el.textContent);
 
         // Small DOM helpers (no innerHTML with text we did not write).
         function icon(name) {
@@ -245,7 +242,7 @@
             main.classList.toggle("searching", !!q);
             let any = false;
             cards.forEach(c => {
-                const hit = !q || c.textContent.toLowerCase().includes(q);
+                const hit = !q || plain(c).toLowerCase().includes(q);
                 c.classList.toggle("hide", !hit);
                 if (hit) any = true;
             });
@@ -286,7 +283,7 @@
         const animSwitch = $("animSwitch");
         animSwitch.addEventListener("click", () => S.set({ animatedBackground: !S.get().animatedBackground }));
 
-        const SIDEBAR_LABELS = { games: ["Games", "gamepad-2"], music: ["Music", "music"], ai: ["AI", "bot"], settings: ["Settings", "settings"] };
+        const SIDEBAR_LABELS = { games: ["Games", "gamepad-2"], ai: ["AI", "bot"], settings: ["Settings", "settings"] };
         function renderSidebar() {
             const order = S.sidebarOrder();
             const move = (i, d) => { const o = order.slice(); [o[i], o[i + d]] = [o[i + d], o[i]]; S.set({ sidebarOrder: o }); };

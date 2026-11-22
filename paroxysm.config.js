@@ -20,9 +20,9 @@ window.PAROXYSM_CONFIG = {
 
     // Shown in Settings > About. Anything left empty is not shown.
     version: "0.3.0",
-    developers: "lynverix",
-    gameSource: "LuminSDK",
+    developers: "",
+    gameSource: "",
     aiProvider: "",
-    extensions: "x8rr/sapphire",
+    extensions: "",
     uiInspiration: "Fern, Refract"
 };

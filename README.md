@@ -2,7 +2,7 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: UI redesign phase (round 4 delivered, waiting for the baseline re-check). The proxy engine is unchanged from mirage; the single-file `index.svg` launcher is planned and not built yet.
+Status: UI and page work (round 6 delivered). The proxy engine is unchanged from mirage; the single-file `index.svg` launcher is planned and not built yet.
 
 ## Run locally
 
@@ -19,7 +19,9 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 | Path | What it is |
 |---|---|
 | `index.html`, `newtab.html`, `settings.html`, `paroxysm.css` | The interface (browser shell, Home page, settings page) |
-| `games.html`, `music.html`, `ai.html` | Empty pages behind the sidebar links, for later |
+| `games.html` | The Games page and the game player (LuminSDK, loaded from jsDelivr, pinned to a commit) |
+| (shell, Home) | `index.html` has the horizontal/vertical tab layouts, the bookmarks bar and the coloured omnibox; `newtab.html` has the shortcuts panel |
+| `ai.html` | An empty page behind the AI sidebar link, for later |
 | `newtab-bg.js` | The Home page background: React Bits Color Bends ported to plain JavaScript (Three.js from a CDN) |
 | `paroxysm-rise.js` | The fade-and-float-in entrance animation on the Home and Settings pages |
 | `paroxysm.config.js` | Settings you edit: the encoded wisp server list, the version and the credit strings (developers, game source, AI provider, extensions, UI inspiration) |

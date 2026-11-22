@@ -1,7 +1,9 @@
 // paroxysm: cloaking, used by the shell (index.html).
 //   - tab disguise: changes the title and icon of the page paroxysm runs in
 //   - panic key: leaves straight away for the chosen URL
-//   - character masking: swaps some letters on proxied pages for lookalike Unicode characters
+//   - character masking: swaps some letters in paroxysm's OWN interface (the shell and its local pages:
+//     tab titles, the address display, bookmarks, Settings, Home, Games...) for lookalike Unicode
+//     characters. It never touches the proxied page itself. It updates live as text changes.
 // Written for paroxysm. Nothing here touches the proxy engine; it only acts on the shell and on
 // same-origin frames. When paroxysm later runs inside an iframe under index.svg, the tab
 // disguise and the panic key will need to message the outer document (not done yet).
@@ -60,7 +62,7 @@
     };
     const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT", "TITLE", "OPTION"]);
     const nodeState = new WeakMap();      // text node -> { orig, masked }
-    const attached = new Set();           // { win, obs, level } for each proxied page being masked
+    const attached = new Set();           // { win, obs, level } for each document of paroxysm's own UI being masked
 
     function hash(str) {
         let h = 2166136261;
@@ -112,6 +114,18 @@
         while ((n = w.nextNode())) maskNode(n, level);
     }
 
+    // The real text of an element, ignoring masking. Code that reads text from paroxysm's own pages
+    // (for example Settings' search box) must use this instead of textContent.
+    function plainText(el) {
+        const w = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let out = "", n;
+        while ((n = w.nextNode())) {
+            const st = nodeState.get(n);
+            out += st && n.data === st.masked ? st.orig : n.data;
+        }
+        return out;
+    }
+
     function refresh(rec) {
         const level = S().get().charMask || 0;
         if (rec.level === level) return;
@@ -137,10 +151,15 @@
         if (level <= 0 && rec.obs) { rec.obs.disconnect(); rec.obs = null; }
     }
 
-    // Called by the shell each time a frame finishes loading.
+    // Called by the shell each time a frame finishes loading. The panic key works everywhere; masking
+    // is applied to paroxysm's own pages only (proxied pages are left exactly as the site sent them).
     function watchWindow(win, proxied) {
         try { win.addEventListener("keydown", onKey, true); } catch { return; }
-        if (!proxied) return;
+        if (proxied) return;
+        maskWindow(win);
+    }
+
+    function maskWindow(win) {
         const rec = { win, obs: null, level: 0 };
         attached.add(rec);
         win.addEventListener("pagehide", () => { rec.obs?.disconnect(); attached.delete(rec); });
@@ -149,6 +168,7 @@
 
     function init() {
         window.addEventListener("keydown", onKey, true);
+        maskWindow(window);                              // the shell itself: tabs, address display, bookmarks, menus
         applyDisguise();
         S().onChange(() => { applyDisguise(); attached.forEach(refresh); });
     }
@@ -156,6 +176,7 @@
     window.paroxysmCloak = {
         init, watchWindow, panic, applyDisguise,
         setCapturing: on => { capturing = !!on; },
+        plainText,
         maskText                                      // exposed for testing
     };
 })();

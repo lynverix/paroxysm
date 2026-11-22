@@ -11,7 +11,7 @@
         animatedBackground: true,
         searchEngine: "brave",
         customSearchUrl: "",            // must contain %s, e.g. https://example.com/?q=%s
-        sidebarOrder: ["games", "music", "ai", "settings"],
+        sidebarOrder: ["games", "ai", "settings"],
         tabCloak: "off",                // id from CLOAKS
         charMask: 0,                    // 0 to 100, in steps of 10
         panicKey: "`",
@@ -68,7 +68,7 @@
         { id: "custom",    label: "Custom" }
     ];
 
-    const SIDEBAR_ITEMS = ["games", "music", "ai", "settings"];
+    const SIDEBAR_ITEMS = ["games", "ai", "settings"];
 
     const listeners = new Set();
     let cache = null;
@@ -83,7 +83,12 @@
     function sidebarOrder() {
         const seen = [];
         for (const k of get().sidebarOrder ?? []) if (SIDEBAR_ITEMS.includes(k) && !seen.includes(k)) seen.push(k);
-        for (const k of SIDEBAR_ITEMS) if (!seen.includes(k)) seen.push(k);
+        for (const k of SIDEBAR_ITEMS) {
+            if (seen.includes(k)) continue;
+            // a link added in a later version goes above Settings, which stays at the bottom
+            if (seen[seen.length - 1] === "settings") seen.splice(seen.length - 1, 0, k);
+            else seen.push(k);
+        }
         return seen;
     }
 

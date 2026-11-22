@@ -16,6 +16,13 @@
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
         <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /><path d="m15 5 4 4" /></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+        <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11" /><line x1="8" x2="8" y1="9" y2="13" /><line x1="15" x2="15.01" y1="12" y2="12" /><line x1="18" x2="18.01" y1="10" y2="10" /><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" /></symbol>
+        <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /><circle cx="12" cy="12" r="3" /></symbol>
     </svg>
     <canvas class="bg-canvas" id="bg" aria-hidden="true"></canvas>
 
@@ -30,6 +37,11 @@
                 autofocus>
             <button class="search-btn" id="searchBtn" title="Go"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
         </div>
+    </div>
+
+    <div class="shortcuts" id="shortcuts" data-rise>
+        <div class="sc-grid" id="scGrid"></div>
+        <div class="sc-edit"><button id="scEdit" type="button"></button></div>
     </div>
 
     <!-- Three.js is pinned to an exact version and checked with an integrity hash.
@@ -51,6 +63,146 @@
         document.getElementById("searchInput").addEventListener("keydown", e => {
             if (e.key === "Enter") navigate(e.target.value);
         });
+
+        // ── Shortcuts ──────────────────────────────────────────────────────────
+        // Sites and paroxysm's own pages, kept in the browser. System pages start at the end of the row and
+        // cannot be removed (so Settings is always reachable); new sites are added in front of them.
+        const SC_KEY = "paroxysm:shortcuts";
+        const SYSTEM = [
+            { id: "p-games",    kind: "page", label: "Games",    url: "paroxysm://games",    icon: "gamepad-2" },
+            { id: "p-ai",       kind: "page", label: "AI",       url: "paroxysm://ai",       icon: "bot" },
+            { id: "p-settings", kind: "page", label: "Settings", url: "paroxysm://settings", icon: "settings" }
+        ];
+        const SITES = [
+            ["YouTube", "https://www.youtube.com"], ["Instagram", "https://www.instagram.com"], ["TikTok", "https://www.tiktok.com"],
+            ["Discord", "https://discord.com/app"], ["Reddit", "https://www.reddit.com"], ["Google", "https://www.google.com"]
+        ].map(([label, url]) => ({ id: "s-" + label.toLowerCase(), kind: "site", label, url }));
+
+        function loadShortcuts() {
+            try {
+                const a = JSON.parse(localStorage.getItem(SC_KEY));
+                if (Array.isArray(a)) {
+                    SYSTEM.forEach(p => { if (!a.some(x => x.id === p.id)) a.push({ ...p }); });
+                    return a.map(x => x.kind === "page" ? { ...SYSTEM.find(p => p.id === x.id) } : x).filter(x => x && x.url);
+                }
+            } catch {}
+            return [...SITES, ...SYSTEM].map(x => ({ ...x }));
+        }
+        let shortcuts = loadShortcuts();
+        const saveShortcuts = () => { try { localStorage.setItem(SC_KEY, JSON.stringify(shortcuts)); } catch {} renderShortcuts(); };
+
+        const SVGNS = "http://www.w3.org/2000/svg";
+        function icon(name) {
+            const svg = document.createElementNS(SVGNS, "svg");
+            svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true");
+            const use = document.createElementNS(SVGNS, "use"); use.setAttribute("href", "#i-" + name);
+            svg.appendChild(use); return svg;
+        }
+
+        const panel = document.getElementById("shortcuts"), grid = document.getElementById("scGrid"), editBtn = document.getElementById("scEdit");
+        let editing = false, dragId = null;
+
+        function openShortcut(sc) {
+            if (sc.kind === "page") window.parent.postMessage({ type: "paroxysm-open", url: sc.url }, location.origin);
+            else window.parent.postMessage({ type: "newtab-navigate", url: sc.url }, "*");
+        }
+
+        // Asks for a name and an address. Returns { label, url } or null.
+        function askShortcut(existing) {
+            return new Promise(resolve => {
+                const back = document.createElement("div");
+                back.className = "modal-back";
+                const box = document.createElement("div");
+                box.className = "modal";
+                box.innerHTML = `<h3></h3>
+                    <label class="field"><span>Name</span><input class="text-input" data-k="label" type="text" placeholder="YouTube" autocomplete="off" spellcheck="false"></label>
+                    <label class="field"><span>Address</span><input class="text-input" data-k="url" type="text" placeholder="https://www.youtube.com" autocomplete="off" spellcheck="false"></label>
+                    <p class="hint" id="scErr" hidden></p>
+                    <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>`;
+                box.querySelector("h3").textContent = existing ? "Edit shortcut" : "Add shortcut";
+                const label = box.querySelector('[data-k="label"]'), url = box.querySelector('[data-k="url"]'), err = box.querySelector("#scErr");
+                label.value = existing?.label ?? ""; url.value = existing?.url ?? "";
+                const done = v => { back.remove(); resolve(v); };
+                const save = () => {
+                    let u = url.value.trim();
+                    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = "https://" + u;
+                    let parsed; try { parsed = new URL(u); } catch {}
+                    if (!parsed || !/^https?:$/.test(parsed.protocol) || !parsed.hostname.includes(".")) { err.hidden = false; err.textContent = "Enter a web address, like youtube.com."; return; }
+                    done({ label: (label.value.trim() || parsed.hostname.replace(/^www\./, "")).slice(0, 30), url: parsed.href });
+                };
+                box.querySelector('[data-x="cancel"]').onclick = () => done(null);
+                box.querySelector('[data-x="ok"]').onclick = save;
+                box.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") done(null); });
+                back.addEventListener("pointerdown", e => { if (e.target === back) done(null); });
+                back.append(box); document.body.append(back);
+                (existing ? url : label).focus();
+            });
+        }
+
+        function tile(sc) {
+            const t = document.createElement("div");
+            t.className = "tile";
+            if (sc.kind === "page") t.append(icon(sc.icon));
+            else {
+                let host = ""; try { host = new URL(sc.url).hostname; } catch {}
+                const img = document.createElement("img");
+                img.alt = ""; img.src = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`;
+                img.onerror = () => { const l = document.createElement("span"); l.className = "letter"; l.textContent = (sc.label[0] || "?").toUpperCase(); img.replaceWith(l); };
+                t.append(img);
+            }
+            return t;
+        }
+
+        function renderShortcuts() {
+            panel.classList.toggle("editing", editing);
+            editBtn.replaceChildren(icon(editing ? "check" : "pencil"), document.createTextNode(editing ? "Done" : "Edit shortcuts"));
+            const tiles = shortcuts.map(sc => {
+                const b = document.createElement("div");
+                b.className = "sc" + (sc.kind === "page" ? " locked" : "");
+                b.setAttribute("role", "button"); b.tabIndex = 0; b.title = sc.label;
+                b.draggable = editing;
+                const label = document.createElement("span"); label.className = "label"; label.textContent = sc.label;
+                const x = document.createElement("span"); x.className = "x"; x.append(icon("x")); x.title = "Remove";
+                x.addEventListener("click", e => { e.stopPropagation(); shortcuts = shortcuts.filter(y => y.id !== sc.id); saveShortcuts(); });
+                b.append(tile(sc), label, x);
+                const act = async () => {
+                    if (!editing) { openShortcut(sc); return; }
+                    if (sc.kind === "page") return;
+                    const r = await askShortcut(sc);
+                    if (r) { shortcuts = shortcuts.map(y => y.id === sc.id ? { ...y, ...r } : y); saveShortcuts(); }
+                };
+                b.addEventListener("click", act);
+                b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } });
+                b.addEventListener("dragstart", e => { dragId = sc.id; b.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", sc.id); });
+                b.addEventListener("dragend", () => { dragId = null; b.classList.remove("dragging"); });
+                b.addEventListener("dragover", e => { if (editing && dragId && dragId !== sc.id) e.preventDefault(); });
+                b.addEventListener("drop", e => {
+                    e.preventDefault();
+                    if (!dragId || dragId === sc.id) return;
+                    const from = shortcuts.findIndex(y => y.id === dragId), to = shortcuts.findIndex(y => y.id === sc.id);
+                    if (from < 0 || to < 0) return;
+                    const [m] = shortcuts.splice(from, 1); shortcuts.splice(to, 0, m); dragId = null; saveShortcuts();
+                });
+                return b;
+            });
+            const add = document.createElement("button");
+            add.type = "button"; add.className = "sc add"; add.title = "Add shortcut";
+            const at = document.createElement("div"); at.className = "tile"; at.append(icon("plus"));
+            const al = document.createElement("span"); al.className = "label"; al.textContent = "Add";
+            add.append(at, al);
+            add.addEventListener("click", async () => {
+                const r = await askShortcut(null);
+                if (!r) return;
+                const item = { id: "u-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: "site", ...r };
+                const firstPage = shortcuts.findIndex(y => y.kind === "page");
+                shortcuts.splice(firstPage < 0 ? shortcuts.length : firstPage, 0, item);   // in front of the system pages
+                saveShortcuts();
+            });
+            grid.replaceChildren(...tiles, add);
+        }
+        editBtn.addEventListener("click", () => { editing = !editing; renderShortcuts(); });
+        addEventListener("storage", e => { if (e.key === SC_KEY) { shortcuts = loadShortcuts(); renderShortcuts(); } });
+        renderShortcuts();
 
         // The logo follows the theme (dark and light have their own file).
         const logo = document.getElementById("logo");

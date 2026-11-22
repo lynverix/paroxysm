@@ -11,7 +11,8 @@
     <script src="paroxysm-settings.js"></script>
 </head>
 
-<body class="browser">
+<body class="browser layout-h">
+    <script>try { if (localStorage.getItem("paroxysm:layout") === "v") document.body.className = "browser layout-v"; } catch (e) {}</script>
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
         <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
         <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></symbol>
@@ -24,12 +25,14 @@
         <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol>
         <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
         <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11" /><line x1="8" x2="8" y1="9" y2="13" /><line x1="15" x2="15.01" y1="12" y2="12" /><line x1="18" x2="18.01" y1="10" y2="10" /><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" /></symbol>
-        <symbol id="i-music" viewBox="0 0 24 24"><path d="M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19" /><circle cx="18" cy="16" r="3" /><circle cx="6" cy="19" r="3" /></symbol>
         <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></symbol>
+        <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" /></symbol>
+        <symbol id="i-panel-top" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /></symbol>
     </svg>
 
     <header class="toolbar">
         <div class="toolbar-left">
+            <button class="brand" id="brandBtn" title="Home" aria-label="paroxysm home"><img id="brandImg" alt="" src="assets/paroxysm/paroxysm_darkmode_icon.png"></button>
             <button class="nav-btn" id="railToggle" title="Toggle sidebar"><svg class="icon" aria-hidden="true"><use href="#i-panel-left"/></svg></button>
             <button class="nav-btn" id="backBtn" title="Back"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"/></svg></button>
             <button class="nav-btn" id="forwardBtn" title="Forward"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
@@ -38,14 +41,22 @@
 
         <div class="url-bar">
             <span class="url-icon"><svg class="icon" aria-hidden="true"><use id="urlIconUse" href="#i-house"/></svg></span>
-            <input type="text" id="urlInput" placeholder="Search or enter address"
-                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <div class="url-field" id="urlField">
+                <div class="url-display" id="urlDisplay" aria-hidden="true"></div>
+                <input type="text" id="urlInput" placeholder="Search or enter address"
+                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+            <button class="url-btn" id="bookmarkBtn" title="Bookmark this page" aria-label="Bookmark this page"><svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg></button>
         </div>
 
         <div class="toolbar-right">
+            <button class="nav-btn" id="layoutBtn" title="Switch layout" aria-label="Switch layout"><svg class="icon" aria-hidden="true"><use href="#i-panel-left"/></svg></button>
             <button class="nav-btn" id="menuBtn" title="Menu" aria-label="Menu"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
         </div>
     </header>
+
+    <div class="tab-strip" id="tabStrip"></div>
+    <div class="marks" id="marksBar"></div>
 
     <aside class="rail">
         <div class="tab-bar" id="tabBar">
@@ -99,7 +110,6 @@
         const LOCAL_ROUTES = {
             home:     { file: "newtab.html",   title: "Home",     icon: "house" },
             games:    { file: "games.html",    title: "Games",    icon: "gamepad-2" },
-            music:    { file: "music.html",    title: "Music",    icon: "music" },
             ai:       { file: "ai.html",       title: "AI",       icon: "bot" },
             settings: { file: "settings.html", title: "Settings", icon: "settings" }
         };
@@ -333,13 +343,14 @@
         }
 
         // Local pages (Settings, Games, ...) are real tabs: focus one if it is already open, otherwise open one.
-        function openPage(key) {
-            const url = LOCAL_SCHEME + key;
-            const existing = tabs.find(t => t.url === url);
+        function openLocal(url) {
+            const norm = u => (!u || u === "newtab") ? HOME_URL : u;     // a new tab is stored as "newtab" internally
+            const existing = tabs.find(t => norm(t.url) === norm(url));
             if (existing) { switchTab(existing.id); return; }
             createTab();
             go(url);
         }
+        const openPage = key => openLocal(LOCAL_SCHEME + key);
 
         // Sidebar links, in the order chosen in Settings > Appearance > Sidebar.
         function renderRailLinks() {
@@ -367,7 +378,7 @@
         function routeKeyFor(url) {
             if (!url || url === "newtab") return "home";
             if (!url.startsWith(LOCAL_SCHEME)) return null;
-            let page = url.slice(LOCAL_SCHEME.length).split("/")[0];
+            let page = url.slice(LOCAL_SCHEME.length).split(/[/?#]/)[0];
             if (page === "newtab") page = "home";
             return LOCAL_ROUTES[page] ? page : null;
         }
@@ -379,6 +390,7 @@
 
         function syncOmnibox(tab) {
             urlIconUse.setAttribute("href", "#i-" + iconNameFor(tab?.url));
+            syncBookmarkBtn();     // tab.url has just changed
         }
 
         function setTabIcon(tab, name) {
@@ -432,7 +444,7 @@
             tab.tabEl = el;
             tab.faviconEl = favicon;
             tab.iconUse = iconUse;
-            tabBar.insertBefore(el, newTabBtn);
+            tabBar.insertBefore(el, newTabBtn.parentNode === tabBar ? newTabBtn : null);   // the New tab button lives in the top bar in horizontal layout
             setTabIcon(tab, iconNameFor(tab.url));
         }
 
@@ -565,15 +577,17 @@
                 const page = routeKeyFor(input);
                 if (!page) return;
                 const route = LOCAL_ROUTES[page];
+                const rest = input.slice(LOCAL_SCHEME.length);
+                const query = rest.includes("?") ? rest.slice(rest.indexOf("?")).split("#")[0] : "";   // e.g. ?g=game-id
                 clearInterval(tab._pollInterval);
                 tab._pollInterval = null;
                 tab.frame = null;
-                tab.url = LOCAL_SCHEME + page;
+                tab.url = LOCAL_SCHEME + page + query;
                 urlInput.value = tab.url;
                 updateTabTitle(tab, route.title);
                 setTabIcon(tab, route.icon);
                 syncOmnibox(tab);
-                tab.iframe.src = route.file;
+                tab.iframe.src = route.file + query;
                 return;
             }
 
@@ -603,7 +617,7 @@
 
         renderRailLinks();
         paroxysmCloak.init();
-        paroxysmSettings.onChange(() => { renderRailLinks(); rebuildServers(); });
+        paroxysmSettings.onChange(() => { renderRailLinks(); rebuildServers(); syncBrand(); });
 
         // sidebar: collapse to icons (remembered)
         const RAIL_KEY = "paroxysm:rail-collapsed";
@@ -645,9 +659,218 @@
         resizer.addEventListener("pointerup", endResize);
         resizer.addEventListener("pointercancel", endResize);
 
+        // ── Layout: horizontal tabs (default) or the sidebar ───────────────────
+        const LAYOUT_KEY   = "paroxysm:layout";
+        const tabStrip     = document.getElementById("tabStrip");
+        const toolbarRight = document.querySelector(".toolbar-right");
+        const railEl       = document.querySelector(".rail");
+        const layoutBtn    = document.getElementById("layoutBtn");
+
+        function setLayout(mode, save = true) {
+            const horizontal = mode !== "v";
+            document.body.classList.toggle("layout-h", horizontal);
+            document.body.classList.toggle("layout-v", !horizontal);
+            if (horizontal) { tabStrip.append(tabBar); toolbarRight.prepend(newTabBtn); }
+            else { railEl.prepend(tabBar); tabBar.append(newTabBtn); }
+            layoutBtn.querySelector("use").setAttribute("href", horizontal ? "#i-panel-left" : "#i-panel-top");
+            layoutBtn.title = horizontal ? "Switch to sidebar tabs" : "Switch to horizontal tabs";
+            layoutBtn.setAttribute("aria-label", layoutBtn.title);
+            if (save) try { localStorage.setItem(LAYOUT_KEY, horizontal ? "h" : "v"); } catch {}
+        }
+        layoutBtn.addEventListener("click", () => setLayout(document.body.classList.contains("layout-h") ? "v" : "h"));
+        try { setLayout(localStorage.getItem(LAYOUT_KEY) === "v" ? "v" : "h", false); } catch { setLayout("h", false); }
+
+        // The paroxysm icon at the top left follows the theme (dark-mode or light-mode file).
+        const brandImg = document.getElementById("brandImg");
+        function syncBrand() {
+            brandImg.src = `assets/paroxysm/paroxysm_${paroxysmSettings.get().theme === "light" ? "lightmode" : "darkmode"}_icon.png`;
+        }
+        syncBrand();
+        document.getElementById("brandBtn").addEventListener("click", () => openPage("home"));
+
+        // ── Omnibox: cosmetic colouring of the address ─────────────────────────
+        // The input always holds the full, real address; Scramjet and everything else read that.
+        // While the field is not being edited, a coloured copy is shown on top: no https://, the domain
+        // bright and the path, query and hash gray. Focusing the field shows the real text again.
+        const urlField   = document.getElementById("urlField");
+        const urlDisplay = document.getElementById("urlDisplay");
+        function renderUrlDisplay() {
+            urlDisplay.replaceChildren();
+            urlField.classList.remove("styled");
+            const v = urlInput.value;
+            if (!v || document.activeElement === urlInput) return;
+            let u;
+            try { u = new URL(v); } catch { return; }
+            let rest = u.pathname + u.search + u.hash;
+            if (rest === "/") rest = "";
+            if (u.protocol !== "http:" && u.protocol !== "https:") urlDisplay.append(document.createTextNode(u.protocol + "//"));
+            const host = document.createElement("b");
+            host.textContent = u.host;
+            urlDisplay.append(host);
+            if (rest) urlDisplay.append(document.createTextNode(rest));
+            urlField.classList.add("styled");
+        }
+        // Code elsewhere sets urlInput.value directly (including the protected frame code); catch every change.
+        const valueDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+        Object.defineProperty(urlInput, "value", {
+            configurable: true,
+            get() { return valueDesc.get.call(this); },
+            set(v) { valueDesc.set.call(this, v); renderUrlDisplay(); syncBookmarkBtn(); }
+        });
+        urlInput.addEventListener("focus", () => { renderUrlDisplay(); urlInput.select(); });
+        urlInput.addEventListener("blur", renderUrlDisplay);
+
+        // ── Small helpers: a context menu and a form dialog ────────────────────
+        let ctxEl = null;
+        function closeCtx() { ctxEl?.remove(); ctxEl = null; }
+        function showCtx(x, y, items) {
+            closeCtx();
+            ctxEl = document.createElement("div");
+            ctxEl.className = "ctx";
+            items.forEach(([label, fn]) => {
+                const b = document.createElement("button");
+                b.textContent = label;
+                b.addEventListener("click", () => { closeCtx(); fn(); });
+                ctxEl.append(b);
+            });
+            document.body.append(ctxEl);
+            ctxEl.style.left = Math.min(x, innerWidth - ctxEl.offsetWidth - 8) + "px";
+            ctxEl.style.top = Math.min(y, innerHeight - ctxEl.offsetHeight - 8) + "px";
+        }
+        addEventListener("pointerdown", e => { if (ctxEl && !ctxEl.contains(e.target)) closeCtx(); }, true);
+        addEventListener("keydown", e => { if (e.key === "Escape") closeCtx(); });
+
+        // Returns the typed value, or null if cancelled.
+        function askText(title, label, value) {
+            return new Promise(resolve => {
+                const back = document.createElement("div");
+                back.className = "modal-back";
+                const box = document.createElement("div");
+                box.className = "modal";
+                box.innerHTML = `<h3></h3><label class="field"><span></span><input class="text-input" type="text" autocomplete="off" spellcheck="false"></label>
+                    <div class="actions"><button class="btn" data-x="cancel">Cancel</button><button class="btn primary" data-x="ok">Save</button></div>`;
+                box.querySelector("h3").textContent = title;
+                box.querySelector("span").textContent = label;
+                const input = box.querySelector("input");
+                input.value = value ?? "";
+                const done = v => { back.remove(); resolve(v); };
+                box.querySelector('[data-x="cancel"]').onclick = () => done(null);
+                box.querySelector('[data-x="ok"]').onclick = () => done(input.value.trim());
+                input.addEventListener("keydown", e => { if (e.key === "Enter") done(input.value.trim()); if (e.key === "Escape") done(null); });
+                back.addEventListener("pointerdown", e => { if (e.target === back) done(null); });
+                back.append(box);
+                document.body.append(back);
+                input.focus(); input.select();
+            });
+        }
+
+        // ── Bookmarks ──────────────────────────────────────────────────────────
+        const MARKS_KEY    = "paroxysm:bookmarks";
+        const marksBar     = document.getElementById("marksBar");
+        const bookmarkBtn  = document.getElementById("bookmarkBtn");
+        const readMarks = () => { try { const a = JSON.parse(localStorage.getItem(MARKS_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } };
+        function writeMarks(list) { try { localStorage.setItem(MARKS_KEY, JSON.stringify(list)); } catch {} renderMarks(); syncBookmarkBtn(); }
+        const normUrl = u => { try { return new URL(u).href; } catch { return String(u); } };
+
+        // The address of the page in the active tab ("" for Home, which is not bookmarked).
+        function currentPageUrl() {
+            const t = getActiveTab();
+            const v = urlInput.value.trim();
+            if (!t || !v || t.url === "newtab" || v === HOME_URL) return "";
+            return v;
+        }
+        function syncBookmarkBtn() {
+            const url = currentPageUrl();
+            const has = !!url && readMarks().some(m => normUrl(m.url) === normUrl(url));
+            bookmarkBtn.disabled = !url;
+            bookmarkBtn.classList.toggle("on", has);
+            bookmarkBtn.title = has ? "Remove bookmark" : "Bookmark this page";
+        }
+        bookmarkBtn.addEventListener("click", () => {
+            const url = currentPageUrl();
+            if (!url) return;
+            const list = readMarks();
+            const at = list.findIndex(m => normUrl(m.url) === normUrl(url));
+            if (at >= 0) { list.splice(at, 1); writeMarks(list); return; }
+            const t = getActiveTab();
+            let title = t?.title;
+            if (!title || title === url || title === t.url) { try { title = new URL(url).host; } catch { title = url; } }
+            list.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: title.slice(0, 80), url });
+            writeMarks(list);
+        });
+
+        function openMark(m, newTab) {
+            if (newTab) createTab();
+            go(m.url);
+        }
+
+        let dragMarkId = null;
+        function renderMarks() {
+            const list = readMarks();
+            marksBar.classList.toggle("show", list.length > 0);
+            marksBar.replaceChildren(...list.map(m => {
+                const b = document.createElement("button");
+                b.className = "mark";
+                b.draggable = true;
+                b.title = m.title + "\n" + m.url;
+                const fav = getFaviconUrl(m.url);
+                const lucide = name => { const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("class", "icon"); svg.setAttribute("aria-hidden", "true"); const use = document.createElementNS("http://www.w3.org/2000/svg", "use"); use.setAttribute("href", "#i-" + name); svg.append(use); return svg; };
+                if (fav) { const i = document.createElement("img"); i.alt = ""; i.src = fav; i.onerror = () => i.replaceWith(lucide("globe")); b.append(i); }
+                else b.append(lucide(iconNameFor(m.url)));
+                const label = document.createElement("span");
+                label.textContent = m.title;
+                b.append(label);
+                b.addEventListener("click", e => openMark(m, e.ctrlKey || e.metaKey));
+                b.addEventListener("auxclick", e => { if (e.button === 1) { e.preventDefault(); openMark(m, true); } });
+                b.addEventListener("contextmenu", e => {
+                    e.preventDefault();
+                    showCtx(e.clientX, e.clientY, [
+                        ["Open in new tab", () => openMark(m, true)],
+                        ["Rename", async () => { const t = await askText("Rename bookmark", "Name", m.title); if (t) writeMarks(readMarks().map(x => x.id === m.id ? { ...x, title: t.slice(0, 80) } : x)); }],
+                        ["Delete", () => writeMarks(readMarks().filter(x => x.id !== m.id))]
+                    ]);
+                });
+                b.addEventListener("dragstart", e => { dragMarkId = m.id; e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", m.id); });
+                b.addEventListener("dragover", e => { if (dragMarkId && dragMarkId !== m.id) { e.preventDefault(); b.classList.add("over"); } });
+                b.addEventListener("dragleave", () => b.classList.remove("over"));
+                b.addEventListener("drop", e => {
+                    e.preventDefault(); b.classList.remove("over");
+                    if (!dragMarkId || dragMarkId === m.id) return;
+                    const cur = readMarks();
+                    const from = cur.findIndex(x => x.id === dragMarkId), to = cur.findIndex(x => x.id === m.id);
+                    if (from < 0 || to < 0) return;
+                    const [moved] = cur.splice(from, 1);
+                    cur.splice(to, 0, moved);
+                    dragMarkId = null;
+                    writeMarks(cur);
+                });
+                b.addEventListener("dragend", () => { dragMarkId = null; });
+                return b;
+            }));
+        }
+        renderMarks();
+        syncBookmarkBtn();
+        addEventListener("storage", e => { if (e.key === MARKS_KEY) { renderMarks(); syncBookmarkBtn(); } });
+
+        // One-time cleanup of the removed extension runtime (Sapphire, tried and removed 2026-11-19): its
+        // stored extension files can be large. Safe to delete this block once nobody has the old version.
+        try {
+            if (!localStorage.getItem("paroxysm:sapphire-cleaned")) {
+                localStorage.setItem("paroxysm:sapphire-cleaned", "1");
+                localStorage.removeItem("paroxysm:builtin-extensions");
+                indexedDB.deleteDatabase("sapphire_extensions");
+            }
+        } catch {}
+
         // ── New tab page messages ──────────────────────────────────────────────
         window.addEventListener("message", e => {
             if (e.data?.type === "newtab-navigate") go(e.data.url);
+
+            // Messages from local pages (Games, ...). Only same-origin frames that are not proxied sites.
+            const tab = tabs.find(t => t.iframe.contentWindow === e.source);
+            if (!tab || tab.frame || e.origin !== location.origin) return;
+            if (e.data?.type === "paroxysm-open" && typeof e.data.url === "string" && e.data.url.startsWith(LOCAL_SCHEME)) openLocal(e.data.url);   // open or focus a local page
+            if (e.data?.type === "paroxysm-title" && typeof e.data.title === "string") updateTabTitle(tab, e.data.title.slice(0, 80));            // name this tab
         });
 
         // ── Init ───────────────────────────────────────────────────────────────
