@@ -51,11 +51,13 @@
     }
 
     // ── character masking ──────────────────────────────────────────────────
-    // Latin letters and their lookalikes (Cyrillic, Greek, Armenian).
+    // Latin letters and their lookalikes (Cyrillic and Greek). Only letters that Inter itself has
+    // (see the Cyrillic and Greek @font-face rules in paroxysm.css) are used, so a masked letter is
+    // drawn in the same font, weight and size as its neighbours. Do not add letters from scripts
+    // Inter lacks (Armenian and others): the browser would draw them from a mismatched system font.
     const LOOKALIKE = {
-        a: "\u0430", c: "\u0441", d: "\u0501", e: "\u0435", h: "\u04bb", i: "\u0456", j: "\u0458",
-        n: "\u0578", o: "\u043e", p: "\u0440", q: "\u051b", s: "\u0455", v: "\u03bd", w: "\u051d",
-        x: "\u0445", y: "\u0443",
+        a: "\u0430", c: "\u0441", e: "\u0435", h: "\u04bb", i: "\u0456", j: "\u0458",
+        o: "\u043e", p: "\u0440", s: "\u0455", v: "\u03bd", x: "\u0445", y: "\u0443",
         A: "\u0410", B: "\u0412", C: "\u0421", E: "\u0415", H: "\u041d", I: "\u0406", J: "\u0408",
         K: "\u041a", M: "\u041c", N: "\u039d", O: "\u041e", P: "\u0420", S: "\u0405", T: "\u0422",
         X: "\u0425", Y: "\u03a5", Z: "\u0396"

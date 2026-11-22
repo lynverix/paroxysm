@@ -28,7 +28,7 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 | `encode_wisp.py` | Turns a text file of wss:// URLs into the encoded entries for `paroxysm.config.js` |
 | `paroxysm-cloak.js` | Tab disguise, panic key and character masking |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
-| `fonts/`, `assets/` | Inter (variable, latin); logo and icons live in `assets/paroxysm/` |
+| `fonts/`, `assets/` | Inter (variable: latin, cyrillic, cyrillic-ext and greek subsets); logo and icons live in `assets/paroxysm/` |
 | `scramjet/`, `controller/`, `epoxy/`, `sw.js` | Proxy engine. Protected: do not edit |
 | `protected.sha256`, `verify_protected.py` | Byte-for-byte check of the protected files |
 | `licenses/` | Licenses for the bundled font and icons |
