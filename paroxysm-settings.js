@@ -13,6 +13,8 @@
         customSearchUrl: "",            // must contain %s, e.g. https://example.com/?q=%s
         sidebarOrder: ["games", "ai", "settings"],
         tabCloak: "off",                // id from CLOAKS
+        tabCloakLast: "",              // the preset the menu switches back on
+        bookmarksBar: true,             // false hides the bookmarks bar (the menu toggles it)
         charMask: 0,                    // 0 to 100, in steps of 10
         panicKey: "`",
         panicTemplate: "classroom",     // id from PANIC_TEMPLATES

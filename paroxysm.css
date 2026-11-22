@@ -843,6 +843,24 @@ body.layout-h #railToggle { display: none; }
 .modal .btn { height: 36px; }
 .modal .btn.primary { background: var(--text-2); color: var(--bg); }
 .modal .text-input { background: var(--surface-3); }
+.modal-text { color: var(--text-2); font-size: 13px; line-height: 1.5; }
+
+/* ── menu dropdown (top bar) ──────────────────────────────────────────── */
+.nav-btn.open { background: var(--surface-3); color: var(--text); }
+.menu { position: fixed; z-index: 45; width: 280px; max-height: calc(100vh - 64px); overflow-y: auto; scrollbar-width: none; padding: var(--s1); background: var(--surface-2); border-radius: 20px; box-shadow: var(--shadow); }
+.menu::-webkit-scrollbar { display: none; }
+.menu-item { display: flex; width: 100%; height: 34px; align-items: center; gap: var(--s3); padding: 0 var(--s3); border-radius: var(--pill); color: var(--text-2); font-size: 13px; font-weight: 500; text-align: left; }
+.menu-item .icon { width: 16px; height: 16px; flex: none; }
+.menu-item .hint { margin-left: auto; color: var(--text-3); font-size: 12px; white-space: nowrap; }
+.menu-item:hover:not(:disabled), .menu-item:focus-visible { background: var(--accent-soft); color: var(--text); outline: 0; }
+.menu-item:disabled { opacity: .45; }
+.menu-item.danger:hover:not(:disabled) { color: var(--err); }
+.menu-sep { height: 1px; margin: var(--s1) var(--s3); background: color-mix(in srgb, var(--text) 10%, transparent); }
+.menu-info { display: flex; align-items: center; gap: var(--s3); padding: 6px var(--s3); color: var(--text-3); font-size: 12px; font-weight: 500; }
+.menu-info .dot { width: 8px; height: 8px; margin: 0 4px; flex: none; border-radius: 50%; background: var(--text-3); }
+.menu-info .dot.ok { background: var(--ok); }
+.menu-info .dot.warn { background: var(--warn); }
+.menu-info .dot.err { background: var(--err); }
 
 /* ── Home: shortcuts ──────────────────────────────────────────────────── */
 .shortcuts {

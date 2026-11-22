@@ -5,7 +5,6 @@ export const {
 	Controller,
 	Frame,
 	ManagedPlugin,
-	VERSION,
-	assertRuntimeScramjetVersion,
 	config,
+	versionInfo,
 } = __external;

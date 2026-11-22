@@ -27,6 +27,7 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 | `paroxysm.config.js` | Settings you edit: the encoded wisp server list, the version and the credit strings (developers, game source, AI provider, extensions, UI inspiration) |
 | `encode_wisp.py` | Turns a text file of wss:// URLs into the encoded entries for `paroxysm.config.js` |
 | `paroxysm-cloak.js` | Tab disguise, panic key and character masking |
+| `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (epoxy/index.js is not modified) |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
 | `fonts/`, `assets/` | Inter (variable: latin, cyrillic, cyrillic-ext and greek subsets); logo and icons live in `assets/paroxysm/` |
 | `scramjet/`, `controller/`, `epoxy/`, `sw.js` | Proxy engine. Protected: do not edit |

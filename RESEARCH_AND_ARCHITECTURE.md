@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-1. mirage is Scramjet `2.0.67-alpha.1` plus `scramjet-controller 0.0.13` plus Epoxy transport over WISP. The proxy logic runs in the controller page (`index.html`); the Service Worker is a thin router. `[confirmed]`
+1. mirage was Scramjet `2.0.67-alpha.1` plus `scramjet-controller 0.0.13` plus Epoxy transport over WISP; **[revised 2026-11-22]** paroxysm now runs Scramjet `2.1.0`, `scramjet-controller 0.1.0` and `epoxy-transport 3.0.2` (the rest of this document describes the original alpha.1 research; the architecture is unchanged). The proxy logic runs in the controller page (`index.html`); the Service Worker is a thin router. `[confirmed]`
 2. Fern's app Service Worker (`omm3do.js`) contains the same Scramjet controller SW code as mirage's `controller/controller.sw.js`, and upstream's demo `sw.js` is identical to mirage's `sw.js`. So Fern-style virtualization is compatible in principle. `[confirmed]`
 3. **No file in `scramjet/`, `controller/` or `epoxy/` needs to change.** The controller already exposes a `config` object (prefix, `scramjetPath`, `injectPath`, `wasmPath`) that Fern overrides to make everything scope-relative. An external adapter can do the same.
 4. **[revised]** The one real conflict with the "protected" rule was in the UI shell, not the engine: `index.html` and `newtab.html` hard-coded root-absolute paths (`/sw.js`, `/scramjet/...`, `/newtab.html`) and one regex that assumed the prefix is `/~/sj/`. The user approved path-only edits (A1, A2); they were done during the redesign. A3 (the `register("/sw.js")` string) stays untouched until the SVG phase, handled by the adapter.
@@ -29,7 +29,7 @@ mirage is fully static, with no `package.json`, no build step and no server code
 5. Rewritten HTML gets four scripts injected: `scramjet.js`, a virtual `<prefix>scramjet.wasm.js` (the controller serves the wasm as base64 in `self.WASM`), `controller.inject.js`, and a bootstrap data URL calling `$scramjetController.load(...)`. The injected client hooks the page's DOM and network APIs, and asks the SW (`$sw$initRemoteTransport`) for its own channel to the controller's transport. Cookies live in an IndexedDB database (`__scramjet_controller`) synced over a `BroadcastChannel`.
 6. If the SW is killed while idle, it restarts, notifies clients with `$controller$swrevive`, and the page re-sends `$controller$init` with a fresh port.
 
-**Version coupling `[confirmed]`:** `controller.api.js` throws at load unless the loaded `scramjet.js` reports exactly `2.0.67-alpha.1`. Upstream HEAD is `2.0.67-alpha.2` / controller `0.0.14`. Never mix versions between the two.
+**Version coupling `[confirmed]`:** `controller.api.js` throws at load unless the loaded `scramjet.js` is a compatible version. **[revised 2026-11-22]** For controller 0.1.0 and Scramjet 2.1.0 the rule is: release versions match if major.minor are equal (any patch), prerelease versions must match exactly (the original alpha.1 controller required exactly `2.0.67-alpha.1`). The controller no longer exports `VERSION`; it exports `versionInfo` (`version`, `build`, `date`). Never mix versions between the packages; take the controller from npm or a tagged release, not from the moving "Continuous Build".
 
 **Other observations `[confirmed]`:**
 - The ZIP's working tree deletes `ai.html`, `arcade.html`, `music.html`, `worker/ai-proxy.js` and `models_dump.json` relative to git HEAD, but `index.html` and `newtab.html` still linked to `mirage://arcade|ai|music`. **[revised 2026-11-19]** Those pages were left out at first and the links were removed in paroxysm. Since then Games was built on LuminSDK and an AI page is planned; Music, Manga and Movies were dropped or declined.
@@ -42,9 +42,9 @@ mirage is fully static, with no `package.json`, no build step and no server code
 
 | Path | Size | Role | Loaded by |
 |---|---|---|---|
-| `scramjet/scramjet.js` | 225,759 B | Scramjet runtime/rewriter, global `$scramjet`, v`2.0.67-alpha.1`, build `758986f` | `<script src="/scramjet/scramjet.js">`; also injected into proxied pages |
+| `scramjet/scramjet.js` | 227,493 B | Scramjet runtime/rewriter, global `$scramjet`, v`2.1.0` (was alpha.1, 225,759 B) | `<script src="/scramjet/scramjet.js">`; also injected into proxied pages |
 | `scramjet/scramjet.wasm` | 583,678 B | Rewriter wasm | fetched by the controller (`config.wasmPath`) |
-| `controller/controller.api.js` | 17,058 B | Page-side API: `Controller`, `Frame`, `config`, `VERSION 0.0.13` | `<script>` in `index.html` |
+| `controller/controller.api.js` | 25,802 B | Page-side API: `Controller`, `Frame`, `config`, `ManagedPlugin`, `versionInfo` (0.1.0; was 17,058 B, `VERSION 0.0.13`) | `<script>` in `index.html` |
 | `controller/controller.sw.js` | 4,576 B | SW-side router: `shouldRoute`, `route`, message/install/activate handlers | `importScripts` from `/sw.js` |
 | `controller/controller.inject.js` | 6,408 B | In-page client for proxied documents | injected by rewriter |
 | `controller/controller-external.mjs` | 321 B | ES re-export stub; unused by mirage | nothing |
@@ -126,7 +126,7 @@ The inline script stays in `index.html` (option A) rather than being extracted, 
 | Root-absolute config (`/~/sj/`, `/scramjet/...`) | `controller.api.js` defaults | `paroxysm-adapter.js` writes scope-relative `config` before `new Controller` |
 | `register("/sw.js")` | wrong origin path | adapter's register shim |
 | Address-bar regex | assumed `/~/sj/` | done (A2) |
-| Version lock | `controller.api.js` asserts `2.0.67-alpha.1` | ship the three Scramjet files from mirage as one unit; never mix with Fern's alpha.2 |
+| Version lock | `controller.api.js` asserts a compatible Scramjet version (2.1.x since the 2026-11-22 update) | ship the Scramjet, controller and Epoxy files as one unit; never mix with Fern's alpha.2 |
 
 **Behavioral risks:** the loader must restore the virtual worker before the first proxied request after an idle restart. mirage already depends on the revive handshake, but the loader adds a Cache Storage read to that path, so the loader milestone tests it explicitly. Fern's synthetic events lack `preventDefault`; Scramjet's route does not use it.
 
@@ -204,7 +204,7 @@ The SVG stays around 10–20 KB. Embedding the wasm would not help because the a
 |---|---|---|
 | 0 | **Feasibility spike**, throwaway repo | **Done.** Results recorded. |
 | 1 | **Baseline** of the untouched mirage with a proxy checklist | **Done.** Results recorded. |
-| 2 | **UI redesign** (shell, new tab, settings, cleanup, vendored icons/font, WISP notification; relative paths A1/A2) | In progress; rounds 1 to 6 delivered; character masking appearance fixed 2026-11-22; next: Menu button, AI page, then M3 (`PROJECT_STATUS.md` section 7) |
+| 2 | **UI redesign** (shell, new tab, settings, cleanup, vendored icons/font, WISP notification; relative paths A1/A2) | In progress; rounds 1 to 6 delivered; character masking appearance fixed, gn-math games source added and Scramjet updated to 2.1.0 on 2026-11-22; Menu dropdown done; next: AI page, then M3 (`PROJECT_STATUS.md` section 7) |
 | 3 | **Verification gate:** the user re-runs the checklist on the redesigned UI | Results match the baseline |
 | 4 | **Spikes and subpath test:** `file://` SVG embedding the jsDelivr copy in an iframe and registering a worker inside it (including the `nosw` fallback and frame headers); serve the app at `localhost:8080/gh/paroxysm@dev/` | Iframe worker registers; checklist passes under a subpath |
 | 5 | **Adapter** (`paroxysm-adapter.js`, `sw-glue.js`) with a plain SW at the subpath, before any loader exists | Proxy works with scope-relative config |
