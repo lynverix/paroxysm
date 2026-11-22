@@ -19,7 +19,7 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 | Path | What it is |
 |---|---|
 | `index.html`, `newtab.html`, `settings.html`, `paroxysm.css` | The interface (browser shell, Home page, settings page) |
-| `games.html` | The Games page and the game player (LuminSDK, loaded from jsDelivr, pinned to a commit) |
+| `games.html` | The Games page and the game player, with a picker between two sources: gn-math (default; catalogue, covers and game pages from the `freebuisness` repos on jsDelivr, games run in a sandboxed iframe) and LuminSDK (loaded from jsDelivr, pinned to a commit) |
 | (shell, Home) | `index.html` has the horizontal/vertical tab layouts, the bookmarks bar and the coloured omnibox; `newtab.html` has the shortcuts panel |
 | `ai.html` | An empty page behind the AI sidebar link, for later |
 | `newtab-bg.js` | The Home page background: React Bits Color Bends ported to plain JavaScript (Three.js from a CDN) |

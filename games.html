@@ -15,8 +15,10 @@
         .wrap { max-width: 1120px; margin: 0 auto; padding: 32px var(--s5) var(--s7); }
 
         /* header, search, tabs */
-        .g-head { margin-bottom: var(--s4); }
+        .g-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
         .g-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+        .seg.src { grid-template-columns: repeat(2, auto); margin-bottom: 0; }
+        .seg.src button { padding: 0 var(--s4); }
         .g-search { display: flex; align-items: center; gap: var(--s2); height: 44px; padding: 0 var(--s2) 0 var(--s4); margin-bottom: var(--s4); background: var(--surface-2); border-radius: var(--pill); color: var(--text-3); }
         .g-search input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; color: var(--text); font-size: 14px; }
         .g-search input::placeholder { color: var(--text-2); }
@@ -89,13 +91,31 @@
     <div class="wrap" id="app"></div>
 
     <script>
-        // Games page. The catalogue and the games come from LuminSDK (headless mode); the interface is ours.
-        // Browse view: paroxysm://games      Player view: paroxysm://games?g=<game id>
-        // The SDK script is pinned to a commit and checked with an integrity hash (it runs in paroxysm's own origin).
+        // Games page. Two game sources sit behind one small interface (ready, list, random, cover, play):
+        //   gn-math  the default. A catalogue (zones.json) plus html game pages and covers from three jsDelivr repos.
+        //   LuminSDK headless mode; the SDK hands out single-use game links.
+        // The interface is ours. Browse view: paroxysm://games      Player view: paroxysm://games?g=<game id>&s=<gnmath|lumin>
+        // The LuminSDK script is pinned to a commit and checked with an integrity hash (it runs in paroxysm's own origin).
+        // gn-math is data only (JSON and html text); its game pages are third-party code, so they only ever run inside a
+        // sandboxed iframe with no access to paroxysm's origin (see GAME_SANDBOX).
         const SDK_URL = "https://cdn.jsdelivr.net/gh/luminsdk/script@e1107337f26529e032d7873cbbb310d485d5d403/fonts.min.js";
         const SDK_SRI = "sha384-SgXJY217C22inNWfmmJ3ffxB1rIh4BmSkT9PDfvMqXoNI1p/td9wKrAjt8SboUHv";
+        const GN = {
+            assets: "https://cdn.jsdelivr.net/gh/freebuisness/assets@main/",
+            html: "https://cdn.jsdelivr.net/gh/freebuisness/html@main/",
+            covers: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/"
+        };
+        const GN_ANALYTICS_ID = "G-L7856P3VNT";      // the original gn-math site's Google Analytics id, removed from every game page
+        // Games tagged for an emulator (js-dos, EmulatorJS...) need IndexedDB, which a sandboxed page does not have; in tests
+        // they showed a black screen or failed. They are hidden for now. Empty this list (or drop the sandbox) to bring them back.
+        const GN_HIDDEN_TAGS = ["emulator", "dos", "psx", "n64", "nds", "gba", "nes"];
+        // No allow-same-origin on purpose: the game gets an opaque origin, so it cannot read paroxysm's storage or its parent.
+        // Cost: a game that needs localStorage / IndexedDB / cookies may not save, or may not run.
+        const GAME_SANDBOX = "allow-scripts allow-pointer-lock allow-popups allow-forms allow-modals allow-downloads";
         const PAGE_SIZE = 36;
         const MAX_RECENTS = 24;
+        const SOURCE_IDS = ["gnmath", "lumin"];
+        const DEFAULT_SOURCE = "gnmath";
 
         const $ = id => document.getElementById(id);
         const app = $("app");
@@ -126,35 +146,43 @@
             if (inShell) window.parent.postMessage(msg, location.origin);
             else if (fallbackUrl) location.href = fallbackUrl;
         }
-        const gameUrl = id => "paroxysm://games?g=" + encodeURIComponent(id);
-        const openGame = g => shell({ type: "paroxysm-open", url: gameUrl(g.id) }, "games.html?g=" + encodeURIComponent(g.id));
+        // A game with no source (saved before the picker existed) is a LuminSDK game.
+        const srcOf = g => g.s === "gnmath" ? "gnmath" : "lumin";
+        const keyOf = g => srcOf(g) + ":" + g.id;
+        const gameQuery = g => "?g=" + encodeURIComponent(g.id) + "&s=" + srcOf(g);
+        const gameUrl = g => "paroxysm://games" + gameQuery(g);
+        const openGame = g => shell({ type: "paroxysm-open", url: gameUrl(g) }, "games.html" + gameQuery(g));
         const goGames = () => shell({ type: "paroxysm-open", url: "paroxysm://games" }, "games.html");
 
-        // ── favourites and recents (kept in the browser, shared by every Games tab) ──
+        // ── the chosen source, favourites and recents (kept in the browser, shared by every Games tab) ──
         const STORE_KEY = "paroxysm:games";
-        const slim = g => ({ id: g.id, name: g.name, category: g.category || "" });
+        const slim = g => ({ id: g.id, name: g.name, category: g.category || "", s: srcOf(g) });
         function readStore() {
             try {
                 const d = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
-                return { favorites: Array.isArray(d.favorites) ? d.favorites : [], recents: Array.isArray(d.recents) ? d.recents : [] };
-            } catch { return { favorites: [], recents: [] }; }
+                return {
+                    favorites: Array.isArray(d.favorites) ? d.favorites : [],
+                    recents: Array.isArray(d.recents) ? d.recents : [],
+                    source: SOURCE_IDS.includes(d.source) ? d.source : DEFAULT_SOURCE
+                };
+            } catch { return { favorites: [], recents: [], source: DEFAULT_SOURCE }; }
         }
         function writeStore(s) { try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {} }
-        const isFav = id => readStore().favorites.some(g => g.id === id);
+        const isFav = key => readStore().favorites.some(g => keyOf(g) === key);
         function toggleFav(g) {
             const s = readStore();
-            const i = s.favorites.findIndex(x => x.id === g.id);
+            const i = s.favorites.findIndex(x => keyOf(x) === keyOf(g));
             if (i >= 0) s.favorites.splice(i, 1); else s.favorites.unshift(slim(g));
             writeStore(s);
             refreshFavs();
         }
         function pushRecent(g) {
             const s = readStore();
-            s.recents = [slim(g), ...s.recents.filter(x => x.id !== g.id)].slice(0, MAX_RECENTS);
+            s.recents = [slim(g), ...s.recents.filter(x => keyOf(x) !== keyOf(g))].slice(0, MAX_RECENTS);
             writeStore(s);
         }
 
-        // ── LuminSDK ──
+        // ══ Source: LuminSDK ══
         let sdk = null;
         function loadSdk() {
             sdk ??= (async () => {
@@ -171,38 +199,202 @@
             sdk.catch(() => { sdk = null; });
             return sdk;
         }
+        const luminTokens = new Map(), luminCovers = new Map();
+        const lumin = {
+            label: "LuminSDK",
+            ready: loadSdk,
+            async list({ page, q }) {
+                await loadSdk();
+                const r = await Lumin.getGames({ page, limit: PAGE_SIZE, q });
+                r.games.forEach(g => { g.s = "lumin"; luminTokens.set(g.id, g.image_token); });
+                return r;
+            },
+            async random(n) {
+                await loadSdk();
+                const r = await Lumin.getRandomGames(n);
+                return (r.games || []).map(g => (g.s = "lumin", g));
+            },
+            async cover(game) {
+                if (luminCovers.has(game.id)) return luminCovers.get(game.id);
+                await loadSdk();
+                let token = game.image_token || luminTokens.get(game.id);
+                if (!token) {                               // favourites and recents only keep id and name
+                    const r = await Lumin.getGames({ q: game.name, limit: 24 });
+                    r.games.forEach(x => luminTokens.set(x.id, x.image_token));
+                    token = luminTokens.get(game.id);
+                }
+                if (!token) return "";
+                const url = await Lumin.getImageUrl(token);
+                luminCovers.set(game.id, url);
+                return url;
+            },
+            // Each call asks LuminSDK for a fresh single-use game link.
+            async play(id) {
+                await loadSdk();
+                const res = await Lumin.getGameUrl(id);
+                if (!res || !res.url) throw new Error("LuminSDK did not return a game link for this id.");
+                return { url: res.url, meta: res.meta || {} };
+            }
+        };
 
-        // Covers: resolved lazily (only when a card scrolls into view), a few at a time.
-        const tokens = new Map(), covers = new Map();
+        // ══ Source: gn-math ══
+        // zones.json lists every game; "{HTML_URL}" and "{COVER_URL}" in it stand for the html and covers repos.
+        // jsDelivr serves .html as text/plain, so a game page is fetched as text and shown through srcdoc.
+        let gnData = null;
+        function gnLoad() {
+            gnData ??= fetch(GN.assets + "zones.json")
+                .catch(() => { throw new Error("The gn-math library could not be loaded."); })
+                .then(r => { if (!r.ok) throw new Error("The gn-math library could not be loaded (HTTP " + r.status + ")."); return r.json(); })
+                .then(zones => {
+                    const byId = new Map();
+                    for (const z of Array.isArray(zones) ? zones : []) {
+                        // skips the "suggest games" entry (id -1, a Discord link), the "[!] COMMENTS" widget and anything that is not a game page
+                        if (!z || !(z.id >= 0) || typeof z.name !== "string" || z.name.startsWith("[!]") || typeof z.url !== "string" || !z.url.startsWith("{HTML_URL}/")) continue;
+                        const tags = Array.isArray(z.special) ? z.special : [];
+                        if (tags.some(t => GN_HIDDEN_TAGS.includes(t))) continue;
+                        const game = { id: String(z.id), name: z.name, category: tags.join(", "), s: "gnmath" };
+                        byId.set(game.id, { game, url: z.url.slice("{HTML_URL}/".length), cover: z.cover, featured: !!z.featured });
+                    }
+                    const games = [...byId.values()].sort((a, b) => (b.featured - a.featured) || a.game.name.localeCompare(b.game.name)).map(d => d.game);
+                    return { games, byId };
+                });
+            gnData.catch(() => { gnData = null; });
+            return gnData;
+        }
+        // Removes the original site's analytics snippet (a gtag.js script and its inline setup), which sits before the doctype.
+        function stripAnalytics(html) {
+            const head = html.slice(0, 2000)
+                .replace(/<script[^>]*googletagmanager\.com\/gtag\/js\?id=[^>]*>\s*<\/script>\s*/i, m => m.includes(GN_ANALYTICS_ID) ? "" : m)
+                .replace(/<script>\s*window\.dataLayer[\s\S]*?<\/script>\s*/i, m => m.includes(GN_ANALYTICS_ID) ? "" : m);
+            return head + html.slice(2000);
+        }
+        const gnmath = {
+            label: "gn-math",
+            ready: gnLoad,
+            async list({ page, q }) {
+                const { games } = await gnLoad();
+                const needle = q.toLowerCase();
+                const found = needle ? games.filter(g => g.name.toLowerCase().includes(needle)) : games;
+                return { games: found.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), total: found.length, page, pages: Math.max(1, Math.ceil(found.length / PAGE_SIZE)) };
+            },
+            async random(n) {
+                const pool = [...(await gnLoad()).games], out = [];
+                while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+                return out;
+            },
+            async cover(game) {
+                const d = (await gnLoad()).byId.get(game.id);
+                return d && typeof d.cover === "string" && d.cover.startsWith("{COVER_URL}/") ? GN.covers + encodeURI(d.cover.slice("{COVER_URL}/".length)) : "";
+            },
+            async play(id) {
+                const d = (await gnLoad()).byId.get(String(id));
+                if (!d) throw new Error("This game isn't in the gn-math library.");
+                const res = await fetch(GN.html + encodeURI(d.url)).catch(() => { throw new Error("The game could not be downloaded."); });
+                if (!res.ok) throw new Error("The game file could not be loaded (HTTP " + res.status + "). Very large games are not available through jsDelivr.");
+                return { html: stripAnalytics(await res.text()), meta: { name: d.game.name, category: d.game.category } };
+            }
+        };
+
+        // ── storage for sandboxed games ──
+        // A sandboxed game has no storage of its own: localStorage, sessionStorage and cookies throw there, and many games
+        // crash on that. A small script (storageBridge) is put at the top of the game's page that gives it in-memory
+        // versions instead. localStorage is also saved by this page, in paroxysm's storage under the game's key, so a game
+        // keeps its progress. The page only ever stores the text it receives; it never runs or parses it as code.
+        // Not covered: IndexedDB, Cache Storage and cookies across reloads.
+        const SAVES_KEY = "paroxysm:game-saves", MAX_SAVES = 10, MAX_SAVE_CHARS = 300000;
+        function readSaves() {
+            try { const d = JSON.parse(localStorage.getItem(SAVES_KEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch { return {}; }
+        }
+        function writeSave(key, data) {
+            const all = readSaves();
+            all[key] = { t: Date.now(), d: data };
+            Object.keys(all).sort((a, b) => all[b].t - all[a].t).slice(MAX_SAVES).forEach(k => delete all[k]);
+            try { localStorage.setItem(SAVES_KEY, JSON.stringify(all)); } catch {}
+        }
+        // This function's source is copied into the game's page, so it must not use anything from this page.
+        function storageBridge(snapJson) {
+            const define = (obj, name, desc) => { try { Object.defineProperty(obj, name, { configurable: true, ...desc }); } catch {} };
+            const make = (init, onChange) => {
+                const d = Object.create(null);
+                Object.assign(d, init);
+                const api = {
+                    getItem: k => (String(k) in d ? d[String(k)] : null),
+                    setItem: (k, v) => { d[String(k)] = String(v); onChange(d); },
+                    removeItem: k => { delete d[String(k)]; onChange(d); },
+                    clear: () => { for (const k in d) delete d[k]; onChange(d); },
+                    key: i => Object.keys(d)[i] ?? null
+                };
+                return new Proxy(api, {
+                    get: (t, p) => p === "length" ? Object.keys(d).length : p in t ? t[p] : typeof p === "string" ? d[p] : undefined,
+                    set: (t, p, v) => { if (typeof p === "string") api.setItem(p, v); return true; },
+                    has: (t, p) => p in t || p in d,
+                    deleteProperty: (t, p) => { api.removeItem(p); return true; },
+                    ownKeys: () => Object.keys(d),
+                    getOwnPropertyDescriptor: (t, p) => p in d ? { value: d[p], enumerable: true, configurable: true, writable: true } : undefined
+                });
+            };
+            let init = {}, timer = 0, latest = null;
+            try { init = JSON.parse(snapJson) || {}; } catch {}
+            const flush = () => { clearTimeout(timer); if (latest) { try { parent.postMessage({ type: "paroxysm-game-save", data: JSON.stringify(latest) }, "*"); } catch {} latest = null; } };
+            const ls = make(init, d => { latest = d; clearTimeout(timer); timer = setTimeout(flush, 400); });
+            const ss = make({}, () => {});
+            define(window, "localStorage", { get: () => ls });
+            define(window, "sessionStorage", { get: () => ss });
+            const jar = Object.create(null);
+            define(document, "cookie", {
+                get: () => Object.keys(jar).map(k => k + "=" + jar[k]).join("; "),
+                set: v => { const kv = String(v).split(";")[0], i = kv.indexOf("="); if (i > 0) jar[kv.slice(0, i).trim()] = kv.slice(i + 1).trim(); }
+            });
+            addEventListener("pagehide", flush);
+        }
+        function withStorageBridge(html, key) {
+            const snap = readSaves()[key]?.d;
+            const call = "(" + storageBridge.toString() + ")(" + JSON.stringify(typeof snap === "string" ? snap : "{}").replace(/</g, "\\u003c") + ")";
+            const tag = "<script>" + call + "<\/script>";
+            const at = /<head[^>]*>/i.exec(html) ?? /^\s*<!doctype[^>]*>/i.exec(html);   // after <head>, so the doctype stays first
+            const i = at ? at.index + at[0].length : 0;
+            return html.slice(0, i) + tag + html.slice(i);
+        }
+        let gameFrame = null, gameKey = "";
+        addEventListener("message", e => {
+            if (gameFrame && e.source === gameFrame.contentWindow && e.data?.type === "paroxysm-game-save" && typeof e.data.data === "string" && e.data.data.length <= MAX_SAVE_CHARS) writeSave(gameKey, e.data.data);
+        });
+
+        const sources = { gnmath, lumin };
+        let SRC = DEFAULT_SOURCE;
+        const src = () => sources[SRC];
+
+        // Covers: resolved lazily (only when a card scrolls into view), a few at a time. A task keeps its slot until
+        // its image has loaded (or failed), so large covers do not all download at once.
         let running = 0; const queue = [];
         function schedule(fn) { queue.push(fn); pump(); }
         function pump() { while (running < 6 && queue.length) { running++; queue.shift()().finally(() => { running--; pump(); }); } }
-        async function coverFor(game) {
-            if (covers.has(game.id)) return covers.get(game.id);
-            let token = game.image_token || tokens.get(game.id);
-            if (!token) {                                   // favourites and recents only keep id and name
-                const r = await Lumin.getGames({ q: game.name, limit: 24 });
-                r.games.forEach(x => tokens.set(x.id, x.image_token));
-                token = tokens.get(game.id);
-            }
-            if (!token) return "";
-            const url = await Lumin.getImageUrl(token);
-            covers.set(game.id, url);
-            return url;
+        async function loadCover(game, img) {
+            try {
+                const url = await sources[srcOf(game)].cover(game);
+                if (!url || !img.isConnected) return;       // a card that was already replaced does not need its cover
+                await new Promise(done => {
+                    const t = setTimeout(done, 20000);
+                    const end = () => { clearTimeout(t); done(); };
+                    img.onload = () => { img.classList.add("ok"); end(); };
+                    img.onerror = end;
+                    img.src = url;
+                });
+            } catch {}
         }
         const seen = "IntersectionObserver" in window ? new IntersectionObserver(entries => {
             for (const e of entries) {
                 if (!e.isIntersecting) continue;
                 seen.unobserve(e.target);
                 const { game, img } = e.target._cover;
-                schedule(async () => { try { const u = await coverFor(game); if (u) { img.src = u; img.onload = () => img.classList.add("ok"); } } catch {} });
+                schedule(() => loadCover(game, img));
             }
         }, { rootMargin: "300px" }) : null;
 
         function favButton(game, cls = "fav") {
-            const b = h("button", { class: cls + (isFav(game.id) ? " on" : ""), "data-fav": game.id, title: "Favorite", "aria-label": "Favorite " + game.name, "aria-pressed": String(isFav(game.id)),
+            const key = keyOf(game), on = isFav(key);
+            return h("button", { class: cls + (on ? " on" : ""), "data-fav": key, title: "Favorite", "aria-label": "Favorite " + game.name, "aria-pressed": String(on),
                 onclick: e => { e.stopPropagation(); toggleFav(game); } }, icon("heart"));
-            return b;
         }
         function refreshFavs() {
             document.querySelectorAll("[data-fav]").forEach(b => {
@@ -220,7 +412,7 @@
                 onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(game); } } },
                 h("div", { class: "cover" }, img), favButton(game), h("span", { class: "name", text: game.name }));
             el._cover = { game, img };
-            if (seen) seen.observe(el); else schedule(async () => { try { const u = await coverFor(game); if (u) { img.src = u; img.classList.add("ok"); } } catch {} });
+            if (seen) seen.observe(el); else schedule(() => loadCover(game, img));
             return el;
         }
 
@@ -240,12 +432,14 @@
             document.title = "Games"; shell({ type: "paroxysm-title", title: "Games" });
             els.search = h("input", { type: "text", placeholder: "Search games", autocomplete: "off", spellcheck: "false", "aria-label": "Search games" });
             els.search.addEventListener("input", () => { clearTimeout(els.t); els.t = setTimeout(() => { view.query = els.search.value.trim(); if (view.tab === "browse") loadBrowse(true); else { updateCounts(); renderList(); } }, 300); });
+            els.src = SOURCE_IDS.map(k => h("button", { type: "button", "data-src": k, text: sources[k].label, onclick: () => setSource(k) }));
             els.seg = ["browse", "recents", "favorites"].map(k => h("button", { "data-tab": k, onclick: () => setTab(k) }));
             els.chip = h("button", { class: "chip-btn on", title: "Library" });
             els.grid = h("div", { class: "grid" });
             els.more = h("div", { class: "more" });
             app.replaceChildren(
-                h("div", { class: "g-head", "data-rise": "" }, h("h1", { text: "Games" })),
+                h("div", { class: "g-head", "data-rise": "" }, h("h1", { text: "Games" }),
+                    h("div", { class: "seg src", role: "group", "aria-label": "Game source" }, ...els.src)),
                 h("label", { class: "g-search", "data-rise": "" }, icon("search"), els.search,
                     h("button", { class: "round-btn", type: "button", title: "Random game", "aria-label": "Random game", onclick: randomGame }, icon("dices"))),
                 h("div", { class: "seg", "data-rise": "" }, ...els.seg),
@@ -254,7 +448,7 @@
             window.paroxysmRise?.run(app);
             updateCounts();
             renderList();
-            loadSdk().catch(() => {});                       // warm up; loadBrowse shows the error
+            src().ready().catch(() => {});                   // warm up; loadBrowse shows the error
             loadBrowse(true);
         }
 
@@ -263,17 +457,30 @@
             els.grid.replaceChildren(failure(e.message || "Something went wrong.", () => { els.grid.replaceChildren(status("Loading...")); loadBrowse(true); }));
         }
 
+        // Picking a source forgets the list of the other one; the choice is remembered.
+        function setSource(k) {
+            if (k === SRC) return;
+            SRC = k;
+            const s = readStore(); s.source = k; writeStore(s);
+            view.req++; view.games = []; view.total = 0; view.page = 0; view.pages = 1; view.loading = false;
+            src().ready().catch(() => {});
+            updateCounts();
+            if (view.tab === "browse") loadBrowse(true); else renderList();
+        }
+
         function setTab(k) { view.tab = k; updateCounts(); if (k === "browse" && !view.games.length) loadBrowse(true); else renderList(); }
 
         const matches = g => !view.query || g.name.toLowerCase().includes(view.query.toLowerCase());
+        const mine = list => list.filter(g => srcOf(g) === SRC);
         function listFor(tab) {
             const s = readStore();
-            return (tab === "recents" ? s.recents : s.favorites).filter(matches);
+            return mine(tab === "recents" ? s.recents : s.favorites).filter(matches);
         }
         function updateCounts() {
             const s = readStore();
             const label = { browse: "Browse", recents: "Recents", favorites: "Favorites" };
-            const count = { browse: 0, recents: s.recents.length, favorites: s.favorites.length };
+            const count = { browse: 0, recents: mine(s.recents).length, favorites: mine(s.favorites).length };
+            els.src.forEach(b => { const on = b.dataset.src === SRC; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
             els.seg.forEach(b => {
                 const k = b.dataset.tab;
                 b.classList.toggle("on", k === view.tab);
@@ -283,12 +490,14 @@
             els.chip.replaceChildren(document.createTextNode("Library"), ...(n ? [h("small", { text: String(n) })] : []));
         }
 
+        const loadMoreButton = () => h("button", { class: "btn", text: "Load more", onclick: () => { els.more.replaceChildren(); loadBrowse(false); } });
+
         function renderList() {
             els.more.replaceChildren();
             if (view.tab === "browse") {
                 if (!view.games.length) { els.grid.replaceChildren(status(view.loading ? "Loading..." : (view.query ? "Nothing found." : "Loading..."))); return; }
                 els.grid.replaceChildren(...view.games.map(g => card(g)));
-                if (view.page < view.pages) els.more.append(h("button", { class: "btn", text: "Load more", onclick: () => { els.more.replaceChildren(); loadBrowse(false); } }));
+                if (view.page < view.pages) els.more.append(loadMoreButton());
                 return;
             }
             const list = listFor(view.tab);
@@ -300,40 +509,40 @@
         }
 
         async function loadBrowse(reset) {
-            const req = ++view.req;
+            const req = ++view.req, source = src();
             if (reset) { view.games = []; view.page = 0; view.pages = 1; view.loading = true; if (view.tab === "browse") renderList(); }
             try {
-                await loadSdk();
-                const r = await Lumin.getGames({ page: view.page + 1, limit: PAGE_SIZE, q: view.query });
+                const r = await source.list({ page: view.page + 1, q: view.query });
                 if (req !== view.req) return;
-                r.games.forEach(g => tokens.set(g.id, g.image_token));
                 view.games = reset ? r.games : view.games.concat(r.games);
                 view.total = r.total ?? view.games.length; view.page = r.page ?? view.page + 1; view.pages = r.pages ?? 1;
                 view.loading = false;
                 updateCounts();
                 if (view.tab === "browse") {
-                    if (reset) renderList(); else { r.games.forEach(g => els.grid.append(card(g))); els.more.replaceChildren(); if (view.page < view.pages) els.more.append(h("button", { class: "btn", text: "Load more", onclick: () => { els.more.replaceChildren(); loadBrowse(false); } })); }
+                    if (reset) renderList(); else { r.games.forEach(g => els.grid.append(card(g))); els.more.replaceChildren(); if (view.page < view.pages) els.more.append(loadMoreButton()); }
                 }
             } catch (e) { if (req === view.req) { view.loading = false; if (view.tab === "browse") showFailure(e); } }
         }
 
         async function randomGame() {
-            try { await loadSdk(); const r = await Lumin.getRandomGames(1); if (r.games[0]) openGame(r.games[0]); } catch (e) { showFailure(e); }
+            try { const [g] = await src().random(1); if (g) openGame(g); } catch (e) { showFailure(e); }
         }
 
         // ══ Player view ══
         // Other games on the player page replace this game in the same tab.
-        const openGameHere = g => shell({ type: "newtab-navigate", url: gameUrl(g.id) }, "games.html?g=" + encodeURIComponent(g.id));
+        const openGameHere = g => shell({ type: "newtab-navigate", url: gameUrl(g) }, "games.html" + gameQuery(g));
 
         const errorText = e => String((e && (e.message || e.error || e.code)) || e || "Unknown error");
 
-        async function renderPlayer(id) {
+        async function renderPlayer(id, sid) {
             view.mode = "player";
-            let game = { id, name: "" }, iframe = null, slow = 0;
+            SRC = sid;
+            const source = src();
+            let game = { id, name: "", s: sid }, iframe = null, slow = 0;
             const overlay = h("div", { class: "loading" });
             const frame = h("div", { class: "frame" }, overlay);
             const title = h("div", { class: "pl-title", text: "Loading..." });
-            const favBtn = h("button", { class: "round-btn fav-btn" + (isFav(id) ? " on" : ""), "data-fav": id, title: "Favorite", "aria-label": "Favorite", "aria-pressed": String(isFav(id)), onclick: () => toggleFav(game) }, icon("heart"));
+            const favBtn = h("button", { class: "round-btn fav-btn" + (isFav(keyOf(game)) ? " on" : ""), "data-fav": keyOf(game), title: "Favorite", "aria-label": "Favorite", "aria-pressed": String(isFav(keyOf(game))), onclick: () => toggleFav(game) }, icon("heart"));
             const reloadBtn = h("button", { class: "round-btn", title: "Reload game", "aria-label": "Reload game", onclick: () => start() }, icon("rotate-cw"));
             const fsBtn = h("button", { class: "round-btn", title: "Fullscreen", "aria-label": "Fullscreen", onclick: () => { document.fullscreenElement ? document.exitFullscreen() : frame.requestFullscreen?.(); } }, icon("maximize"));
             const sideL = h("div", { class: "side" }), sideR = h("div", { class: "side" });
@@ -358,34 +567,35 @@
                     withRetry ? h("button", { class: "btn", text: "Try again", onclick: () => start() }) : null));
             };
 
-            // Each call asks LuminSDK for a fresh single-use game link.
             async function start() {
                 clearTimeout(slow);
                 overlay.hidden = false;
                 overlay.replaceChildren(document.createTextNode("Loading game..."));
                 try {
-                    await loadSdk();
-                    const res = await Lumin.getGameUrl(id);
-                    if (!res || !res.url) throw new Error("LuminSDK did not return a game link for this id.");
-                    game = { id, name: res.meta?.name || id, category: res.meta?.category || "" };
+                    const res = await source.play(id);
+                    game = { id, name: res.meta?.name || id, category: res.meta?.category || "", s: sid };
                     title.textContent = game.name;
                     document.title = game.name; shell({ type: "paroxysm-title", title: game.name });
                     pushRecent(game);
                     iframe?.remove();
                     iframe = h("iframe", { title: game.name, allow: "autoplay; fullscreen; pointer-lock; gamepad", allowfullscreen: "" });
                     iframe.addEventListener("load", () => { clearTimeout(slow); overlay.hidden = true; });
-                    iframe.src = res.url;
+                    if (res.html != null) {                      // third-party page: opaque origin, with the storage bridge
+                        gameFrame = iframe; gameKey = keyOf(game);
+                        iframe.setAttribute("sandbox", GAME_SANDBOX);
+                        iframe.srcdoc = withStorageBridge(res.html, gameKey);
+                    }
+                    else iframe.src = res.url;
                     frame.prepend(iframe);
-                    slow = setTimeout(() => say("Still loading", "The game is taking a long time. You can ask for a fresh link.", true), 20000);
+                    slow = setTimeout(() => say("Still loading", res.html != null ? "The game is taking a long time. You can reload it." : "The game is taking a long time. You can ask for a fresh link.", true), 20000);
                 } catch (e) {
-                    console.error("[paroxysm] game failed to load:", id, e);
+                    console.error("[paroxysm] game failed to load:", sid, id, e);
                     say("This game couldn't load", errorText(e), true);
                     return;
                 }
                 if (!sideL.children.length) {                    // the other games, after the game itself has started
                     try {
-                        const rnd = await Lumin.getRandomGames(18);
-                        const others = (rnd.games || []).filter(g => g.id !== id);
+                        const others = (await source.random(18)).filter(g => g.id !== id);
                         others.slice(0, 8).forEach((g, i) => (i % 2 ? sideR : sideL).append(card(g, openGameHere)));
                         others.slice(8).forEach(g => more.append(card(g, openGameHere)));
                     } catch (e) { console.error("[paroxysm] other games failed to load:", e); }
@@ -395,12 +605,14 @@
         }
 
         // ── start ──
-        const param = new URLSearchParams(location.search).get("g");
+        const params = new URLSearchParams(location.search);
+        const param = params.get("g");
         if (param) {
-            // Any id is fine here: it is only passed to the SDK and shown as text, never put into HTML.
-            if (param.length <= 300) renderPlayer(param);
+            // Any id is fine here: it is only passed to the source and shown as text, never put into HTML.
+            // A link without s=... was made before the picker existed, so it is a LuminSDK game.
+            if (param.length <= 300) renderPlayer(param, params.get("s") === "gnmath" ? "gnmath" : "lumin");
             else app.replaceChildren(h("div", { class: "notice" }, h("h3", { text: "That game link isn't valid" }), h("button", { class: "btn", text: "Back to games", onclick: goGames })));
-        } else renderBrowse();
+        } else { SRC = readStore().source; renderBrowse(); }
     </script>
 </body>
 
