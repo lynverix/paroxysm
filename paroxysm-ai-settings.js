@@ -139,10 +139,15 @@
             draw();
             if (AI.puter.signedIn() && AI.puter.user()) say("", "Signed in as " + AI.puter.user() + ".");
             return section({
-                title: "Puter account", desc: "No API key needed. Sign in with a free Puter account to chat with GPT, Gemini, DeepSeek and Gemma models using your account's monthly allowance. Requests go straight to Puter unless you send them through the proxy with the option below.",
+                title: "Puter account", desc: "No API key needed. Sign in with a free Puter account to chat with GPT, Gemini, DeepSeek and Gemma models using your account's monthly allowance. Requests go straight to Puter unless you send them through the proxy with the option below. Puter is blocked on Lightspeed, so stick with Quick unless a workaround turns up.",
                 link: h("button", { class: "ais-link", text: "About Puter", onclick: () => openUrl("https://puter.com") }), body: box
             });
         };
+        const keyBox = h("details", { class: "ais-hidden" },
+            h("summary", {}, h("span", { text: "Hidden" }), h("span", { class: "ais-hint", text: "Needs an API key" })),
+            keyRow("gemini", "Use your own free Google key to unlock Gemma 4 and the Gemini models, with image support. It's saved in this browser only."),
+            keyRow("deepseek", "Unlocks DeepSeek V4.1 Flash, which thinks before it answers and can read images. It isn't free, but it's very cheap."));
+        if (focusProvider === "gemini" || focusProvider === "deepseek") keyBox.open = true;
         const proxySwitch = h("button", { class: "switch", role: "switch", "aria-checked": String(!!s.viaProxy), "aria-label": "Send AI requests through the proxy" });
         proxySwitch.addEventListener("click", () => {
             const on = proxySwitch.getAttribute("aria-checked") !== "true";
@@ -179,8 +184,7 @@
         });
 
         return [
-            keyRow("gemini", "Use your own free Google key to unlock Gemma 4 and the Gemini models, with image support. It's saved in this browser only."),
-            keyRow("deepseek", "Unlocks DeepSeek V4.1 Flash, which thinks before it answers and can read images. It isn't free, but it's very cheap."),
+            keyBox,
             puterRow(),
             section({ title: "Send AI requests through the proxy", desc: "Turn this on if your network blocks AI sites. The proxy has to be connected. Quick always goes through it, and Puter chats will too (but not Puter's sign-in window).", side: proxySwitch }),
             section({ title: "Daily limit", desc: "Caps how many messages you can send per day on Quick and the shared key. Your own keys follow their own limits.", side: cap }),

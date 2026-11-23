@@ -154,7 +154,12 @@
             </section>
 
             <!-- Dev: empty -->
-            <section class="settings-section" id="sec-dev"></section>
+            <section class="settings-section" id="sec-dev">
+                <div class="card" data-rise>
+                    <h3 class="card-title">Coming soon</h3>
+                    <p class="card-desc" style="margin-bottom:0">Settings in this section are coming soon.</p>
+                </div>
+            </section>
 
             <section class="settings-section" id="sec-about">
                 <div class="card" data-rise>
@@ -246,6 +251,11 @@
                 const hit = !q || plain(c).toLowerCase().includes(q);
                 c.classList.toggle("hide", !hit);
                 if (hit) any = true;
+            });
+            document.querySelectorAll(".ais-hidden").forEach(d => {
+                const hit = !!d.querySelector(".card:not(.hide)");
+                d.hidden = !hit;
+                if (q && hit) d.open = true;
             });
             document.querySelectorAll(".settings-section").forEach(sec => {
                 sec.classList.toggle("empty", !!q && !sec.querySelector(".card:not(.hide)"));

@@ -756,7 +756,7 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
 .server-item.selected { background: var(--sel); }
 .server-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .server-item .icon { width: 16px; height: 16px; }
-.server-item .check { visibility: hidden; }
+.server-item .check { order: 9; visibility: hidden; }
 .server-item.selected .check { visibility: visible; }
 .server-item .icon-btn { flex: none; }
 .add-server { display: none; gap: var(--s2); margin-top: var(--s3); }
@@ -854,6 +854,19 @@ body.layout-h #railToggle { display: none; }
 .ais:first-child { margin-top: var(--s3); }
 .ais-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .ais-title { font-size: 13px; font-weight: 600; }
+.ais-hidden { margin-top: var(--s5); }
+.ais-hidden:first-child { margin-top: var(--s3); }
+.ais-hidden > summary { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s3) var(--s5); background: var(--surface-2); border-radius: var(--pill); font-weight: 600; cursor: pointer; list-style: none; }
+.ais-hidden > summary::-webkit-details-marker { display: none; }
+.ais-hidden > summary:hover { background: var(--surface-3); }
+.ais-hidden > summary .ais-hint { margin-left: auto; color: var(--text-3); font-size: 12px; font-weight: 400; }
+.ais-hidden > summary::after, .chev { content: ""; flex: none; width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(45deg) translate(-2px, -2px); transition: transform .15s var(--ease); }
+.chev { display: inline-block; }
+.ais-hidden[open] > summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+.ais-hidden > .card, .ais-hidden > .ais { margin-top: var(--s4); }
+.settings-section > .ais-hidden { margin-top: var(--s4); }
+.settings-section > .ais-hidden:first-child { margin-top: 0; }
+.card + .ais-hidden, .ais-hidden + .card { margin-top: var(--s4); }
 .ais-desc { margin-top: 2px; color: var(--text-3); font-size: 12.5px; line-height: 1.55; }
 .ais-key { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s2); }
 .ais-key .text-input { flex: 1; min-width: 0; }

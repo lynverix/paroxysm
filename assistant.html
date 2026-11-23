@@ -194,6 +194,9 @@
         .opt .o-note { display: block; margin-top: 1px; font-size: 11.5px; color: var(--text-3); }
         .opt .o-tag { flex: none; padding: 2px 8px; border-radius: var(--pill); background: var(--surface-3); color: var(--text-2); font-size: 10.5px; font-weight: 600; }
         .opt .o-tag.lock { background: var(--accent-soft); color: var(--text); }
+        .o-hidden { display: flex; flex-direction: column; }
+        .o-hidden[hidden] { display: none; }
+        .opt[aria-expanded="true"] .chev { transform: rotate(225deg) translate(-2px, -2px); }
         .opt .icon { width: 15px; height: 15px; flex: none; color: var(--accent-2); }
         .toast { position: fixed; left: 50%; bottom: 96px; translate: -50% 0; z-index: 60; padding: 9px 16px; border-radius: var(--pill); font-size: 12.5px; color: var(--text); }
 
@@ -658,12 +661,21 @@
         }
         function openModels() {
             if (document.querySelector(".pop:not(.closing)")) { closePop(); return; }
-            const pop = h("div", { class: "pop glass", role: "menu" }, AI.MODELS.map(m => {
+            const row = m => {
                 const src = AI.resolve(m);
                 const tag = !src ? h("span", { class: "o-tag lock", text: m.provider === "puter" ? "Sign in" : "Add key" }) : src.kind === "puter" ? h("span", { class: "o-tag", text: "Puter" }) : src.kind === "own" ? h("span", { class: "o-tag", text: "Your key" }) : src.kind === "shared" ? h("span", { class: "o-tag", text: "Shared" }) : null;
                 return h("button", { class: "opt", role: "menuitem", onclick: () => { closePop(); if (!src) { openSettings(m.provider); return; } chat.model = m.id; AI.settings.set({ model: m.id }); if (m.vision === false && pending.length) { pending = []; toast("Images removed: this model can't see them."); } renderHeader(); renderComposer(); renderUsage(); if (!chat.messages.length) renderThread(); if (chat.messages.length) saveChat(); } },
                     h("span", { class: "o-main" }, h("span", { class: "o-name", text: m.name }), h("span", { class: "o-note", text: m.note })), tag, chat.model === m.id ? icon("check") : null);
-            }));
+            };
+            const locked = AI.MODELS.filter(m => !AI.resolve(m) && m.provider !== "puter");
+            const kids = AI.MODELS.filter(m => !locked.includes(m)).map(row);
+            if (locked.length) {
+                const box = h("div", { class: "o-hidden", hidden: true }, locked.map(row));
+                const toggle = h("button", { class: "opt", role: "menuitem", "aria-expanded": "false", onclick: () => { box.hidden = !box.hidden; toggle.setAttribute("aria-expanded", String(!box.hidden)); } },
+                    h("span", { class: "o-main" }, h("span", { class: "o-name", text: "Hidden" }), h("span", { class: "o-note", text: "Needs an API key" })), h("span", { class: "chev" }));
+                kids.push(toggle, box);
+            }
+            const pop = h("div", { class: "pop glass", role: "menu" }, kids);
             [...pop.children].forEach((c, i) => c.style.setProperty("--i", i));
             document.body.append(pop);
             const r = $("modelBtn").getBoundingClientRect();
