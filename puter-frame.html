@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src https://*.puter.com https://puter.com wss://*.puter.com https://cdn.jsdelivr.net; img-src data: blob: https:; style-src 'unsafe-inline'">
+<title>paroxysm puter</title>
+</head>
+<body>
+<script>
+// paroxysm: runs Puter.js in isolation. The AI page puts this file in an iframe with sandbox="allow-scripts" (no
+// allow-same-origin), so Puter's code has an opaque origin and can't read paroxysm's storage, keys or chats. The CSP above
+// limits where it can connect. The AI page talks to it with postMessage (it checks that messages come from this frame, and
+// this file checks that they come from its parent). Puter.js is a pinned npm version, fetched from jsDelivr and checked
+// against an integrity hash before it runs. Sign-in happens in the AI page (Puter.js refuses to sign in from a sandboxed
+// frame); the page hands over the resulting token here.
+// When "Send AI requests through the proxy" is on, the page tells this frame so ({ t: "proxy", on: true }). Puter.js makes
+// its API calls with XMLHttpRequest, so the frame then swaps in a small XMLHttpRequest of its own that hands each request
+// to the page (which sends it through the wisp transport, to puter.com hosts only) and streams the answer back, and it
+// blocks WebSockets (Puter's live-events socket would connect directly).
+(() => {
+    const SRC = "https://cdn.jsdelivr.net/npm/@heyputer/puter.js@2.6.5/dist/puter.cjs";
+    const SRI = "sha384-cxUuIyzn+eZySBzLjYzu2EPLDC3wj9mbKTQdeLvXjlhkpHME6nS7DzYsio5hj6U0";
+    const parent = window.parent;
+    const send = m => parent.postMessage(m, "*");
+    const jobs = new Map();
+    let token = "";
+
+    const NativeXHR = window.XMLHttpRequest, NativeWS = window.WebSocket;
+    const xhrs = new Map();
+    let xid = 0;
+    class ProxyXHR extends EventTarget {
+        constructor() {
+            super();
+            Object.assign(this, { readyState: 0, status: 0, statusText: "", responseType: "", response: "", responseText: "", responseURL: "", withCredentials: false, timeout: 0, upload: new EventTarget() });
+            this._h = []; this._chunks = []; this._dec = new TextDecoder();
+        }
+        open(method, url) { this._m = String(method).toUpperCase(); this._u = new URL(url, location.href).href; this._state(1); }
+        setRequestHeader(k, v) { this._h.push([String(k), String(v)]); }
+        getResponseHeader(n) { return this._rh ? this._rh.get(n) : null; }
+        getAllResponseHeaders() { return this._rh ? [...this._rh].map(([k, v]) => k + ": " + v).join("\r\n") + "\r\n" : ""; }
+        overrideMimeType() {}
+        _fire(type) { const e = new Event(type); try { this["on" + type]?.call(this, e); } catch (err) { console.error(err); } this.dispatchEvent(e); }
+        _state(n) { this.readyState = n; this._fire("readystatechange"); }
+        async send(body) {
+            let data = null;
+            if (typeof body === "string") data = body;
+            else if (body instanceof ArrayBuffer) data = body.slice(0);
+            else if (ArrayBuffer.isView(body)) data = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+            else if (body instanceof Blob) data = await body.arrayBuffer();
+            else if (body != null) { this._id = ++xid; return this._fail(); }
+            this._id = ++xid;
+            xhrs.set(this._id, this);
+            send({ t: "xhr", fid: this._id, method: this._m, url: this._u, headers: this._h, body: data });
+        }
+        abort() {
+            if (this._id == null || this.readyState === 4 || !xhrs.has(this._id)) return;
+            xhrs.delete(this._id);
+            send({ t: "xhr-abort", fid: this._id });
+            this.status = 0;
+            this._state(4); this._fire("abort"); this._fire("loadend");
+        }
+        _head(m) { this.status = m.status; this.statusText = m.statusText || ""; this._rh = new Headers(m.headers); this.responseURL = m.url || this._u; this._state(2); }
+        _chunk(buf) {
+            const bytes = new Uint8Array(buf);
+            this._chunks.push(bytes);
+            if (!this.responseType || this.responseType === "text") this.response = this.responseText += this._dec.decode(bytes, { stream: true });
+            if (this.readyState < 3) this._state(3);
+            this._fire("progress");
+        }
+        _end() {
+            xhrs.delete(this._id);
+            const all = new Uint8Array(this._chunks.reduce((n, c) => n + c.length, 0));
+            let at = 0;
+            for (const c of this._chunks) { all.set(c, at); at += c.length; }
+            if (this.responseType === "arraybuffer") this.response = all.buffer;
+            else if (this.responseType === "blob") this.response = new Blob([all], { type: this._rh?.get("content-type") || "" });
+            else {
+                this.response = this.responseText = new TextDecoder().decode(all);
+                if (this.responseType === "json") { try { this.response = JSON.parse(this.responseText); } catch { this.response = null; } }
+            }
+            this._state(4); this._fire("load"); this._fire("loadend");
+        }
+        _fail() { xhrs.delete(this._id); this.status = 0; this._state(4); this._fire("error"); this._fire("loadend"); }
+    }
+    class BlockedWebSocket { constructor() { throw new DOMException("WebSockets are blocked while Puter runs through the proxy.", "SecurityError"); } }
+    function setProxy(on) {
+        window.XMLHttpRequest = on ? ProxyXHR : NativeXHR;
+        window.WebSocket = on ? BlockedWebSocket : NativeWS;
+    }
+
+    const fail = e => {
+        const o = e?.error && typeof e.error === "object" ? e.error : e;
+        return { message: String(o?.message ?? o?.msg ?? (typeof e === "string" ? e : "Something went wrong")).slice(0, 400), code: o?.code ?? e?.code ?? "", status: o?.status ?? e?.status ?? e?.statusCode ?? 0 };
+    };
+
+    async function load() {
+        const res = await fetch(SRC, { integrity: SRI, credentials: "omit" });
+        if (!res.ok) throw new Error("Puter.js could not be downloaded (HTTP " + res.status + ").");
+        const s = document.createElement("script");
+        s.textContent = await res.text();
+        document.head.append(s);
+        if (!window.puter?.ai) throw new Error("Puter.js did not start.");
+        return window.puter;
+    }
+
+    const ready = load().then(puter => { send({ t: "ready", version: "2.6.5" }); return puter; }, e => { send({ t: "fatal", ...fail(e) }); throw e; });
+    ready.catch(() => {});
+
+    async function chat(m) {
+        const puter = await ready;
+        if (!token) throw { message: "Sign in to Puter first.", code: "signin_required", status: 401 };
+        const ctrl = new AbortController();
+        jobs.set(m.id, ctrl);
+        try {
+            const stream = await puter.ai.chat(m.messages, { model: m.model, stream: true, signal: ctrl.signal });
+            send({ t: "started", id: m.id });
+            for await (const part of stream) {
+                if (part.type === "text" && part.text) send({ t: "text", id: m.id, text: part.text });
+                else if (part.type === "reasoning" && part.reasoning) send({ t: "thought", id: m.id, text: part.reasoning });
+                else if (part.type === "error") throw part;
+            }
+            send({ t: "done", id: m.id });
+        } finally { jobs.delete(m.id); }
+    }
+
+    async function account() {
+        const puter = await ready;
+        if (!token) throw { message: "Sign in to Puter first.", code: "signin_required", status: 401 };
+        const who = await puter.auth.whoami();
+        let left = null;
+        try {
+            const a = (await puter.auth.getMonthlyUsage())?.allowanceInfo;
+            if (a && a.monthUsageAllowance > 0) left = Math.max(0, Math.min(1, a.remaining / a.monthUsageAllowance));
+        } catch {}
+        return { username: String(who?.username ?? who?.email ?? "").slice(0, 80), left };
+    }
+
+    addEventListener("message", async e => {
+        const m = e.data;
+        if (e.source !== parent || !m || typeof m !== "object") return;
+        try {
+            if (m.t === "proxy") {
+                setProxy(!!m.on);
+            } else if (m.t?.startsWith("xhr-")) {
+                const x = xhrs.get(m.fid);
+                if (m.t === "xhr-head") x?._head(m);
+                else if (m.t === "xhr-chunk") x?._chunk(m.data);
+                else if (m.t === "xhr-end") x?._end();
+                else if (m.t === "xhr-err") x?._fail();
+            } else if (m.t === "token") {
+                const puter = await ready;
+                token = typeof m.token === "string" ? m.token : "";
+                if (token) puter.setAuthToken(token); else puter.resetAuthToken();
+            } else if (m.t === "chat") {
+                await chat(m);
+            } else if (m.t === "abort") {
+                jobs.get(m.id)?.abort();
+            } else if (m.t === "account") {
+                send({ t: "account", id: m.id, ...(await account()) });
+            }
+        } catch (err) {
+            send({ t: "error", id: m.id, ...fail(err) });
+        }
+    });
+})();
+</script>
+</body>
+</html>

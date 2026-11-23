@@ -94,7 +94,7 @@
 
     function eligible(node) {
         const p = node.parentElement;
-        return !!p && !SKIP_TAGS.has(p.tagName) && !p.isContentEditable && node.data.trim() !== "";
+        return !!p && !SKIP_TAGS.has(p.tagName) && !p.isContentEditable && !p.closest("[data-nomask]") && node.data.trim() !== "";
     }
 
     function maskNode(node, level) {

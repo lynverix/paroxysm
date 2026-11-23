@@ -11,7 +11,7 @@
         animatedBackground: true,
         searchEngine: "brave",
         customSearchUrl: "",            // must contain %s, e.g. https://example.com/?q=%s
-        sidebarOrder: ["games", "ai", "settings"],
+        sidebarOrder: ["games", "assistant", "settings"],
         tabCloak: "off",                // id from CLOAKS
         tabCloakLast: "",              // the preset the menu switches back on
         bookmarksBar: true,             // false hides the bookmarks bar (the menu toggles it)
@@ -70,7 +70,7 @@
         { id: "custom",    label: "Custom" }
     ];
 
-    const SIDEBAR_ITEMS = ["games", "ai", "settings"];
+    const SIDEBAR_ITEMS = ["games", "assistant", "settings"];
 
     const listeners = new Set();
     let cache = null;
@@ -84,7 +84,7 @@
     // Keep only known links, once each, and add any that are missing at the end.
     function sidebarOrder() {
         const seen = [];
-        for (const k of get().sidebarOrder ?? []) if (SIDEBAR_ITEMS.includes(k) && !seen.includes(k)) seen.push(k);
+        for (const k of (get().sidebarOrder ?? []).map(x => x === "ai" ? "assistant" : x)) if (SIDEBAR_ITEMS.includes(k) && !seen.includes(k)) seen.push(k);
         for (const k of SIDEBAR_ITEMS) {
             if (seen.includes(k)) continue;
             // a link added in a later version goes above Settings, which stays at the bottom

@@ -18,6 +18,11 @@ window.PAROXYSM_CONFIG = {
         "L3Rla2Nvcy9ncm8ucmV0bmVjZ25pbGVzbnVvY2Vyb3RzZXIvLzpzc3c="
     ],
 
+    // Optional shared key for the AI page (a free Google AI Studio key from a throwaway project, Gemma 4 only).
+    // Leave empty to make everyone paste their own key, or use the keyless Quick model. The key is visible to
+    // anyone who opens the site and Google may block it if it is found in a public repository.
+    aiKey: "",
+
     // Shown in Settings > About. Anything left empty is not shown.
     version: "0.3.0",
     developers: "",

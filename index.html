@@ -25,7 +25,7 @@
         <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16" /><path d="M4 12h16" /><path d="M4 19h16" /></symbol>
         <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
         <symbol id="i-gamepad-2" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11" /><line x1="8" x2="8" y1="9" y2="13" /><line x1="15" x2="15.01" y1="12" y2="12" /><line x1="18" x2="18.01" y1="10" y2="10" /><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" /></symbol>
-        <symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></symbol>
+        <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /><path d="M20 2v4" /><path d="M22 4h-4" /><circle cx="4" cy="20" r="2" /></symbol>
         <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" /></symbol>
         <symbol id="i-panel-top" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18" /></symbol>
         <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></symbol>
@@ -119,7 +119,7 @@
         const LOCAL_ROUTES = {
             home:     { file: "newtab.html",   title: "Home",     icon: "house" },
             games:    { file: "games.html",    title: "Games",    icon: "gamepad-2" },
-            ai:       { file: "ai.html",       title: "AI",       icon: "bot" },
+            assistant: { file: "assistant.html", title: "AI", icon: "sparkles" },
             settings: { file: "settings.html", title: "Settings", icon: "settings" }
         };
         const HOME_URL         = LOCAL_SCHEME + "home";
@@ -319,6 +319,18 @@
             selectServer,
             addCustomServer,
             removeCustomServer,
+            // fetch() through the wisp transport (end-to-end encrypted, no CORS limits). Used by the AI page's
+            // "send through the proxy" setting. Returns a normal Response whose body streams.
+            fetch: async (url, init = {}) => {
+                const transport = ready && scramjet?.transport;
+                if (!transport) throw new Error("The proxy isn't connected yet.");
+                const headers = [...new Headers(init.headers ?? {})];
+                let body = init.body ?? undefined;
+                if (typeof body === "string") body = new TextEncoder().encode(body);
+                const res = await transport.request(new URL(url), (init.method ?? "GET").toUpperCase(), body, headers, init.signal);
+                const noBody = [101, 204, 205, 304].includes(res.status);
+                return new Response(noBody ? null : res.body, { status: res.status, statusText: res.statusText, headers: new Headers(res.headers) });
+            },
             about: () => ({
                 version:    window.PAROXYSM_CONFIG?.version ?? "dev",
                 scramjet:   self.$scramjet?.versionInfo?.version ?? "unknown",
@@ -390,6 +402,7 @@
             if (!url.startsWith(LOCAL_SCHEME)) return null;
             let page = url.slice(LOCAL_SCHEME.length).split(/[/?#]/)[0];
             if (page === "newtab") page = "home";
+            if (page === "ai") page = "assistant";      // the old name still works
             return LOCAL_ROUTES[page] ? page : null;
         }
 
@@ -493,10 +506,7 @@
                 safety = setTimeout(show, 6000);          // never stay hidden if a load event is missed
             };
             f.addEventListener("load", () => {
-                if (tab.frame && recentlyRevived() && !servedByProxy(f.contentWindow) && (tab.reviveRetries = (tab.reviveRetries ?? 0) + 1) <= 2) {
-                    try { f.contentWindow.location.reload(); return; } catch {}   // loaded while the service worker had no route yet
-                }
-                tab.reviveRetries = 0;
+                if (tab.frame && unservedFrame(f.contentWindow) && retryUnserved(tab)) return;   // loaded while the service worker had no route
                 f.classList.toggle("web", !!tab.frame);   // proxied sites get a white canvas, local pages don't
                 try { f.contentWindow.addEventListener("pagehide", hide); } catch {}
                 try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {}   // panic key, character masking
@@ -884,9 +894,14 @@
 
         function closeMenu() {
             menuToken++;
-            menuEl?.remove();
+            const el = menuEl;
             menuEl = null;
             menuBtn.classList.remove("open");
+            if (!el) return;
+            if (getComputedStyle(el).animationName === "none") { el.remove(); return; }     // reduced motion
+            el.classList.add("closing");                                                    // fade out, then remove
+            el.addEventListener("animationend", e => { if (e.target === el) el.remove(); });
+            setTimeout(() => el.remove(), 400);
         }
 
         function confirmBox(title, text, okLabel) {
@@ -961,7 +976,7 @@
                 [   // 1. paroxysm pages
                     { icon: "plus", label: "New tab", run: () => createTab() },
                     { icon: "gamepad-2", label: "Games", run: () => openPage("games") },
-                    { icon: "bot", label: "AI", run: () => openPage("ai") },
+                    { icon: "sparkles", label: "AI", run: () => openPage("assistant") },
                     { icon: "settings", label: "Settings", run: () => openPage("settings") }
                 ],
                 [   // 2. connection
@@ -971,7 +986,7 @@
                 ],
                 [   // 3. quick toggles
                     { icon: light ? "moon" : "sun", label: light ? "Switch to dark theme" : "Switch to light theme", run: () => paroxysmSettings.set({ theme: light ? "dark" : "light" }) },
-                    { icon: "bookmark", label: s.bookmarksBar === false ? "Show bookmarks bar" : "Hide bookmarks bar", hint: marks ? "" : "No bookmarks", disabled: !marks, run: () => paroxysmSettings.set({ bookmarksBar: s.bookmarksBar === false }) },
+                    { icon: "bookmark", label: !marks ? "Bookmarks bar" : s.bookmarksBar === false ? "Show bookmarks bar" : "Hide bookmarks bar", hint: marks ? "" : "No bookmarks", disabled: !marks, run: () => paroxysmSettings.set({ bookmarksBar: s.bookmarksBar === false }) },
                     { icon: horizontal ? "panel-left" : "panel-top", label: horizontal ? "Use sidebar tabs" : "Use horizontal tabs", run: () => setLayout(horizontal ? "v" : "h") }
                 ],
                 [   // 4. cloaking
@@ -1017,6 +1032,7 @@
         function openMenu() {
             closeMenu();
             closeCtx();
+            document.querySelectorAll(".menu.closing").forEach(el => el.remove());
             const token = menuToken;
             menuEl = document.createElement("div");
             menuEl.className = "menu";
@@ -1047,6 +1063,7 @@
                     menuEl.append(b);
                 });
             });
+            [...menuEl.children].forEach((c, i) => c.style.setProperty("--i", i));     // stagger of the opening animation
             document.body.append(menuEl);
             const r = menuBtn.getBoundingClientRect();
             menuEl.style.left = Math.max(8, Math.min(r.right - menuEl.offsetWidth, innerWidth - menuEl.offsetWidth - 8)) + "px";
@@ -1088,6 +1105,7 @@
             if (!tab || tab.frame || e.origin !== location.origin) return;
             if (e.data?.type === "paroxysm-open" && typeof e.data.url === "string" && e.data.url.startsWith(LOCAL_SCHEME)) openLocal(e.data.url);   // open or focus a local page
             if (e.data?.type === "paroxysm-title" && typeof e.data.title === "string") updateTabTitle(tab, e.data.title.slice(0, 80));            // name this tab
+            if (e.data?.type === "paroxysm-open-url" && /^https?:\/\//i.test(e.data.url ?? "")) { createTab(); go(e.data.url); }                    // a link from a local page, opened in a new proxied tab
         });
 
         // ── Service worker restarts ────────────────────────────────────────────
@@ -1109,12 +1127,49 @@
             });
         }
 
+        // A proxied frame whose document came from the static server instead of the worker: no $scramjet, and an HTML
+        // page (or any page right after a revive). Used whether or not a revive message ever arrived (B16).
+        const unservedFrame = win => {
+            try {
+                if (servedByProxy(win) || !proxiedUrlPattern().test(win.location.href)) return false;   // local pages (Home, about:blank) are never "unserved"
+                return recentlyRevived() || win.document.contentType === "text/html";
+            } catch { return false; }
+        };
+
+        // Give the frame's own controller a fresh port to the worker (this also wakes a stopped worker), then reload the
+        // frame. At most two tries per 20 s per tab. Returns true when a reload was started.
+        function retryUnserved(tab) {
+            const now = performance.now();
+            if (now - (tab.reviveSince ?? -1e9) > 20000) { tab.reviveSince = now; tab.reviveRetries = 0; }
+            if (++tab.reviveRetries > 2) return false;
+            console.warn("[paroxysm] a proxied page loaded without the service worker's route; re-registering with the worker and reloading (try " + tab.reviveRetries + ").",
+                { controlled: !!navigator.serviceWorker.controller, revived: recentlyRevived(), page: (() => { try { return tab.iframe.contentWindow.location.href.slice(0, 120) + " " + tab.iframe.contentDocument.contentType; } catch { return "?"; } })() });
+            try { (tab.frame?.controller ?? scramjet)?.setupMessagePort?.(); } catch (e) { console.error(e); }
+            setTimeout(() => { try { tab.iframe.contentWindow.location.reload(); } catch {} }, 300);
+            return true;
+        }
+
         navigator.serviceWorker?.addEventListener("message", e => {
             if (!e.data?.$controller$swrevive || !ready) return;
             lastRevive = performance.now();
             if (scramjet.guardServiceWorkerRevive && typeof scramjet.setupMessagePort === "function") scramjet.setupMessagePort();
             setTimeout(reloadUnservedFrames, 1500);
         });
+
+        // A page the worker does not control (a hard reload, Ctrl+Shift+R, leaves it that way) never receives the
+        // worker's revive announcement or cookie updates, so a restarted worker stays without routes. A normal reload
+        // cures it. Reload once; if the page is still uncontrolled (for example "Bypass for network" is ticked), say so.
+        (async () => {
+            const sw = navigator.serviceWorker, KEY = "paroxysm:uncontrolled-reload";
+            if (!sw) return;
+            await sw.ready;
+            if (!sw.controller) await Promise.race([new Promise(r => sw.addEventListener("controllerchange", r, { once: true })), new Promise(r => setTimeout(r, 2000))]);
+            if (sw.controller) { try { sessionStorage.removeItem(KEY); } catch {} return; }
+            let tried = false;
+            try { tried = !!sessionStorage.getItem(KEY); sessionStorage.setItem(KEY, "1"); } catch {}
+            if (!tried) { console.warn("[paroxysm] this page is not controlled by the service worker; reloading once."); location.reload(); return; }
+            showPill("warn", "paroxysm isn't controlled by its service worker. If DevTools \"Bypass for network\" is on, turn it off and reload.", 10000);
+        })();
 
         // ── Init ───────────────────────────────────────────────────────────────
         function probeWisp(url) {
