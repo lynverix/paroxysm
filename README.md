@@ -2,7 +2,7 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: UI and page work, far along and waiting for feedback. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since); the single-file `index.svg` launcher is planned and not built yet (it starts after the user has re-run the baseline checklist).
+Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher is next and not built yet (milestones M4 to M9: iframe-embedding spike, adapter, loader worker, SVG loader, release tooling, hardening).
 
 ## Run locally
 
@@ -40,6 +40,7 @@ Check the protected files at any time with `python verify_protected.py`.
 ## Troubleshooting
 
 - A proxied tab shows a white page saying `Cannot GET /~/sj/...`: that is the local server answering because the service worker did not route the request (it can happen after a hard reload, Ctrl+Shift+R, followed by a worker restart). paroxysm now repairs this on its own: a page the worker does not control reloads itself once, and a proxied page that loaded unserved is retried twice. If it still happens, open the console and look for lines starting with `[paroxysm]`; "Bypass for network" in DevTools > Application > Service workers must be off.
+- YouTube pages (`youtube.com`, `youtu.be`) fail with a `Hyper client ... Http2 ... PROTOCOL_ERROR` error. That is a limit of the Epoxy transport, not something paroxysm can fix; other sites, including Discord and Google, work.
 - Menu > Reconnect only replaces the connection to the wisp server; Menu > Find best server picks another server.
 
 ## Configuration
