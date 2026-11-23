@@ -21,9 +21,9 @@ window.PAROXYSM_CONFIG = {
 
     // shown in Settings > About; empty entries are hidden
     version: "0.3.0",
-    developers: "",
-    gameSource: "",
-    aiProvider: "",
+    developers: "lynverix",
+    gameSource: "gn-math | LuminSDK",
+    aiProvider: "Pollinations | Puter, Google Gemini, DeepSeek",
     extensions: "",
     uiInspiration: "Fern, Refract"
 };

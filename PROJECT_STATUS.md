@@ -50,7 +50,7 @@ Currently being worked on: nothing open. **Next (the user's order): M4 subpath +
 paroxysm/
 ├─ index.html              shell: toolbar, vertical tab rail, frames, pill; inline script = mirage's script + asserted edits
 ├─ newtab.html             Home page: logo, search pill, Color Bends background (Three.js from CDN, pinned 0.128.0 + integrity hash)
-├─ settings.html           Settings page: Appearance, Search, Proxy, AI, Cloaking, Dev (empty), About
+├─ settings.html           Settings page: Appearance, Search, Proxy, AI, Cloaking, Dev (a "coming soon" card), About
 ├─ paroxysm.css            all styles; accent/spacing/shape tokens at the top
 ├─ newtab-bg.js            React Bits Color Bends ported to plain JS; upstream shaders verbatim; PROPS block at the top
 ├─ paroxysm-rise.js        staggered fade-and-float-in entrance for Home and Settings (data-rise)
@@ -237,7 +237,7 @@ Things the SVG phase must handle (2026-11-22 findings): tab disguise and the pan
 **Awaiting a decision or input**
 - Puter: confirmed working by the user (real chat directly and through the proxy, images). Open: the free allowance size and the out-of-allowance error. The five Puter models were Claude's choice (Gemma 4 31B, GPT-5.4 nano, DeepSeek V4.1 Flash, Gemini 3.8 Flash, GPT-5.5); the user asked about Claude models on Puter, got the findings above and decided not to add any, so `CLAUDE.md` still says none.
 - Whether gn-math games work well on the user's machine (saves, sound, controllers, which games fail). The user's only extra planned task was the code style cleanup (done); they have no further UI tasks and consider the redesign finished.
-- Values for the `developers`, `gameSource` and `aiProvider` strings in `paroxysm.config.js` (empty for now; empty strings are hidden in About).
+- Credit strings in `paroxysm.config.js`: the user set `developers` ("lynverix"), `gameSource` ("gn-math | LuminSDK") and `aiProvider` ("Pollinations | Puter, Google Gemini, DeepSeek") on 2026-11-23; `extensions` is still empty (hidden in About). The separators are deliberate, do not normalise them: in `aiProvider` the `|` separates the default (Pollinations, free) from the options that need a key or a sign-in (Puter, Google Gemini, DeepSeek); in `gameSource` it separates the default (gn-math) from the fallback (LuminSDK).
 - Whether "tab radius smaller" meant the rail tabs (done, 12 px), the page area (done, 14 px) or both; Claude changed both.
 - Whether the parallax (default 0.5, which makes the background shift slightly with the mouse) should be 0 too.
 - Scramjet: updated to 2.1.0 on 2026-11-22 (section 7). The user re-ran the checklist: B8 fixed, B10 (YouTube, HTTP/2) a known transport limit, the rest works.
