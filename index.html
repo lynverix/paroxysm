@@ -483,6 +483,7 @@
                 try { f.contentWindow.addEventListener("pagehide", hide); } catch {}
                 try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {} // panic key and masking
                 show();
+                syncNavButtons();
             });
         }
 
@@ -550,6 +551,7 @@
                 urlInput.value = tab.url === "newtab" ? HOME_URL : (tab.url || "");
                 syncOmnibox(tab);
             }
+            syncNavButtons();
         }
 
         function closeTab(id) {
@@ -605,9 +607,22 @@
         }
 
         urlInput.addEventListener("keydown", e => { if (e.key === "Enter") go(urlInput.value); });
-        document.getElementById("backBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.back();
-        document.getElementById("forwardBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
+        const backBtn = document.getElementById("backBtn"), forwardBtn = document.getElementById("forwardBtn");
+        backBtn.onclick = () => getActiveTab()?.iframe?.contentWindow?.history.back();
+        forwardBtn.onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
         document.getElementById("reloadBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
+
+        // grey out back and forward with nowhere to go; stay enabled if history is unreadable
+        // proxied pages hide navigation so read it through shell's getter
+        const navigationOf = Object.getOwnPropertyDescriptor(window, "navigation")?.get;
+        function syncNavButtons() {
+            let nav = null;
+            try { const win = getActiveTab()?.iframe?.contentWindow; nav = navigationOf ? navigationOf.call(win) : win?.navigation; } catch {}
+            const known = typeof nav?.canGoBack === "boolean";
+            backBtn.disabled = known && !nav.canGoBack;
+            forwardBtn.disabled = known && !nav.canGoForward;
+        }
+        setInterval(syncNavButtons, 300);
         newTabBtn.onclick = () => createTab();
 
         renderRailLinks();

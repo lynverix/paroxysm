@@ -57,26 +57,26 @@
             <section class="settings-section active" id="sec-appearance">
                 <div class="card" data-rise>
                     <h3 class="card-title">Accent color</h3>
-                    <p class="card-desc">The color of the selected tab and the Home background. It also tints the whole interface.</p>
+                    <p class="card-desc">Sets the color of the selected tab and the Home background, and gives the rest of the interface a slight tint.</p>
                     <div class="accent-grid" id="accentGrid"></div>
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Theme</h3>
-                    <p class="card-desc">Light or dark. The accent color follows the theme: it tints the surfaces and text of whichever you pick, and the Home background follows it too.</p>
+                    <p class="card-desc">Light or dark. Your accent color tints whichever one you pick, including the Home background.</p>
                     <div class="choices two" id="themeList"></div>
                 </div>
                 <div class="card" data-rise>
                     <div class="row">
                         <div>
                             <h3 class="card-title">Animated background</h3>
-                            <p class="card-desc" style="margin-bottom:0">Slowly moving color on the Home page. Turn off for a still image.</p>
+                            <p class="card-desc" style="margin-bottom:0">Slow moving color on the Home page. Turn it off for a still background.</p>
                         </div>
                         <button class="switch" id="animSwitch" role="switch" aria-checked="true" aria-label="Animated background"></button>
                     </div>
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Sidebar</h3>
-                    <p class="card-desc">Move a link up or down to change where it sits in the sidebar. The sidebar is used when tabs are in the sidebar layout.</p>
+                    <p class="card-desc">Choose the order of the sidebar links. They only show when your tabs are in the sidebar layout.</p>
                     <div class="choices" id="sidebarList"></div>
                 </div>
             </section>
@@ -84,11 +84,11 @@
             <section class="settings-section" id="sec-search">
                 <div class="card" data-rise>
                     <h3 class="card-title">Search engine</h3>
-                    <p class="card-desc">Used by the Home page and the address bar when you type something that isn't a web address.</p>
+                    <p class="card-desc">Used when you type something on Home or in the address bar that isn't a web address.</p>
                     <div class="choices" id="engineList"></div>
                     <div class="custom-field" id="customField" hidden>
                         <input class="text-input" id="customUrl" type="text" placeholder="https://example.com/?q=%s" autocomplete="off" spellcheck="false" aria-label="Custom search URL">
-                        <p class="hint" id="customHint">Use %s where your search words go. For example: https://example.com/?q=%s</p>
+                        <p class="hint" id="customHint">Put %s where your search words go, like https://example.com/?q=%s</p>
                     </div>
                 </div>
             </section>
@@ -96,7 +96,7 @@
             <section class="settings-section" id="sec-proxy">
                 <div class="card" data-rise>
                     <h3 class="card-title">Wisp server</h3>
-                    <p class="card-desc">paroxysm connects through a wisp server. Pick one yourself, or let paroxysm find the best one that works.</p>
+                    <p class="card-desc">paroxysm connects through a wisp server. Pick one yourself or let it find one that works.</p>
                     <p class="status-line" id="proxyStatus"></p>
                     <div class="server-list" id="serverList"></div>
                     <div class="add-server" id="addServer">
@@ -118,23 +118,23 @@
             <section class="settings-section" id="sec-cloaking">
                 <div class="card" data-rise>
                     <h3 class="card-title">Tab disguise</h3>
-                    <p class="card-desc">Changes the title and icon of this browser tab so it looks like another site.</p>
+                    <p class="card-desc">Changes this tab's title and icon so it looks like another site.</p>
                     <div class="choices two" id="cloakList"></div>
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Character masking</h3>
-                    <p class="card-desc">Replaces some letters in paroxysm's own interface (tab titles, menus, Settings and so on, not the web page you are viewing) with lookalike Unicode characters. It looks the same, but the text in the DOM inspector doesn't match. It updates as you drag. Higher values replace more letters.</p>
+                    <p class="card-desc">Swaps some letters in paroxysm's own pages (tab titles, menus, Settings) for lookalike characters. They look the same but won't match if someone inspects the text. Higher values swap more letters.</p>
                     <div class="range-row">
                         <input type="range" id="maskRange" min="0" max="100" step="10" aria-label="Character masking">
                         <span class="range-val" id="maskVal">0%</span>
                     </div>
-                    <p class="hint">It can affect copy and paste, find in page and screen readers in paroxysm's own pages. Proxied pages are never changed.</p>
+                    <p class="hint">This can break copy and paste, find in page and screen readers on paroxysm's own pages. Websites you visit are never changed.</p>
                 </div>
                 <div class="card" data-rise>
                     <div class="row">
                         <div>
                             <h3 class="card-title">Panic key</h3>
-                            <p class="card-desc" style="margin-bottom:0">Press this key anywhere in paroxysm to leave straight away.</p>
+                            <p class="card-desc" style="margin-bottom:0">Press this key anywhere in paroxysm to leave right away.</p>
                         </div>
                         <div class="row" style="gap:8px;flex:none">
                             <span class="kbd" id="panicKey"></span>
@@ -144,7 +144,7 @@
                 </div>
                 <div class="card" data-rise>
                     <h3 class="card-title">Panic redirect URL</h3>
-                    <p class="card-desc">Where the panic key sends you.</p>
+                    <p class="card-desc">Where the panic key takes you.</p>
                     <div class="choices two" id="panicList"></div>
                     <div class="custom-field" id="panicCustomField" hidden>
                         <input class="text-input" id="panicCustom" type="text" placeholder="https://example.com" autocomplete="off" spellcheck="false" aria-label="Custom panic URL">
@@ -304,8 +304,8 @@
             const v = e.target.value.trim();
             const ok = /^https?:\/\/.+%s/i.test(v);
             $("customHint").textContent = ok || !v
-                ? "Use %s where your search words go. For example: https://example.com/?q=%s"
-                : "That address needs %s where your search words go, for example https://example.com/?q=%s";
+                ? "Put %s where your search words go, like https://example.com/?q=%s"
+                : "That needs %s where your search words go, like https://example.com/?q=%s";
             if (ok) S.set({ customSearchUrl: v });
         });
 

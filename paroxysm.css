@@ -200,7 +200,8 @@ body.resizing .frames iframe { pointer-events: none; }
     transition: background .12s var(--ease), color .12s var(--ease);
 }
 .nav-btn .icon { width: 16px; height: 16px; }
-.nav-btn:hover { background: var(--surface-3); color: var(--text); }
+.nav-btn:hover:not(:disabled) { background: var(--surface-3); color: var(--text); }
+.nav-btn:disabled { opacity: .35; }
 
 .url-bar {
     display: flex;

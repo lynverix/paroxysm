@@ -139,7 +139,7 @@
             draw();
             if (AI.puter.signedIn() && AI.puter.user()) say("", "Signed in as " + AI.puter.user() + ".");
             return section({
-                title: "Puter account", desc: "No key needed: sign in with a free Puter account to use GPT, Claude, Gemini, DeepSeek and more. Puter gives each account a monthly allowance, so nothing is billed to paroxysm. Puter's code only loads once you use this, in an isolated frame. Requests go straight to Puter, or through the proxy if you turn that on below (the sign-in window always connects directly).",
+                title: "Puter account", desc: "No API key needed. Sign in with a free Puter account to chat with GPT, Gemini, DeepSeek and Gemma models using your account's monthly allowance. Requests go straight to Puter unless you send them through the proxy with the option below.",
                 link: h("button", { class: "ais-link", text: "About Puter", onclick: () => openUrl("https://puter.com") }), body: box
             });
         };
@@ -179,15 +179,15 @@
         });
 
         return [
-            keyRow("gemini", "Unlocks Gemma 4 and the Gemini models, with images and your own free quota. The key stays in this browser."),
-            keyRow("deepseek", "Unlocks DeepSeek V4.1 Flash, which thinks before answering and sees images. DeepSeek isn't free, but it is very cheap."),
+            keyRow("gemini", "Use your own free Google key to unlock Gemma 4 and the Gemini models, with image support. It's saved in this browser only."),
+            keyRow("deepseek", "Unlocks DeepSeek V4.1 Flash, which thinks before it answers and can read images. It isn't free, but it's very cheap."),
             puterRow(),
-            section({ title: "Send AI requests through the proxy", desc: "Helps if your network blocks the AI providers. Needs the proxy to be connected. Quick always uses it. Covers Puter's chats too, but not its sign-in window.", side: proxySwitch }),
-            section({ title: "Daily limit", desc: "For Quick and the shared key. Your own keys have their own limits.", side: cap }),
-            section({ title: "Custom instructions", desc: "Added to every chat, for example how you like answers written.", body: instr }),
+            section({ title: "Send AI requests through the proxy", desc: "Turn this on if your network blocks AI sites. The proxy has to be connected. Quick always goes through it, and Puter chats will too (but not Puter's sign-in window).", side: proxySwitch }),
+            section({ title: "Daily limit", desc: "Caps how many messages you can send per day on Quick and the shared key. Your own keys follow their own limits.", side: cap }),
+            section({ title: "Custom instructions", desc: "Added to every chat. Handy for telling it how you like answers written.", body: instr }),
             section({ title: "Today", body: usage }),
             section({ title: "Delete all chats", desc: "Removes every saved chat from this browser.", side: deleteBtn }),
-            section({ title: "Privacy", desc: "Gemini's free tier may use prompts to improve Google's products, and Quick sends prompts to a third-party service, and Puter sends them to Puter and then to the model's provider. Don't send passwords or personal details." })
+            section({ title: "Privacy", desc: "Your prompts leave your browser. Gemini's free tier may use them to improve Google's products, Quick sends them to a third-party service and Puter passes them on to the model's provider. Don't send passwords or personal details." })
         ];
     }
 
