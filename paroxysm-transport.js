@@ -1,8 +1,5 @@
-// paroxysm: keeps the Epoxy transport alive after a wisp connection drop.
-// Epoxy's client ends for good when its wisp connection closes ("Wisp(MuxTaskEnded)"); every later
-// request then fails even though the server is back. This adapter wraps EpoxyTransport from the outside
-// (epoxy/index.js is not modified): when a request fails that way it makes a new client with the transport's
-// own init(), once the server answers again, and retries the request. Load it after epoxy/index.js.
+// wraps EpoxyTransport from outside: after a wisp drop (MuxTaskEnded) makes a new client and retries
+// load after epoxy/index.js
 (() => {
     const T = self.EpoxyTransport?.default;
     if (!T) return;
@@ -22,7 +19,7 @@
         });
     }
 
-    // One reconnect at a time per transport; every failing request waits for the same one.
+    // one reconnect at a time; failing requests wait for it
     function reconnect(t, manual = false) {
         if (t.__reconnect) return t.__reconnect;
         return t.__reconnect = (async () => {
@@ -44,7 +41,7 @@
         })().finally(() => { t.__reconnect = null; });
     }
 
-    T.prototype.reconnect = function (manual) { return reconnect(this, manual); };   // the menu's Reconnect item
+    T.prototype.reconnect = function (manual) { return reconnect(this, manual); }; // menu's Reconnect item
 
     const request = T.prototype.request;
     T.prototype.request = async function (...args) {
@@ -54,9 +51,9 @@
                 return await request.apply(this, args);
             } catch (e) {
                 if (!ended(e) || attempt >= 2) throw e;
-                // a client made after this request started is already fresh; otherwise make one
+                // client made after request started is fresh already; otherwise make one
                 const ok = (this.__generation ?? 0) !== generation || await reconnect(this);
-                if (!ok || args[2] instanceof ReadableStream) throw e;   // a streamed body cannot be sent twice
+                if (!ok || args[2] instanceof ReadableStream) throw e; // streamed body cannot be sent twice
             }
         }
     };

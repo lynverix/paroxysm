@@ -1,16 +1,7 @@
-// paroxysm: cloaking, used by the shell (index.html).
-//   - tab disguise: changes the title and icon of the page paroxysm runs in
-//   - panic key: leaves straight away for the chosen URL
-//   - character masking: swaps some letters in paroxysm's OWN interface (the shell and its local pages:
-//     tab titles, the address display, bookmarks, Settings, Home, Games...) for lookalike Unicode
-//     characters. It never touches the proxied page itself. It updates live as text changes.
-// Written for paroxysm. Nothing here touches the proxy engine; it only acts on the shell and on
-// same-origin frames. When paroxysm later runs inside an iframe under index.svg, the tab
-// disguise and the panic key will need to message the outer document (not done yet).
+// cloaking for the shell: tab disguise; panic key; character masking of own UI only
 (() => {
     const S = () => window.paroxysmSettings;
 
-    // ── tab disguise ───────────────────────────────────────────────────────
     const original = {
         title: document.title,
         icon: document.querySelector('link[rel~="icon"]')?.getAttribute("href") ?? null
@@ -32,8 +23,7 @@
         setIcon(`https://www.google.com/s2/favicons?domain=${p.domain}&sz=64`);
     }
 
-    // ── panic key ──────────────────────────────────────────────────────────
-    let capturing = false;     // the settings page sets this while you choose a new key
+    let capturing = false; // set by settings page while choosing a new key
 
     function panic() {
         const url = S().panicUrl();
@@ -50,11 +40,7 @@
         panic();
     }
 
-    // ── character masking ──────────────────────────────────────────────────
-    // Latin letters and their lookalikes (Cyrillic and Greek). Only letters that Inter itself has
-    // (see the Cyrillic and Greek @font-face rules in paroxysm.css) are used, so a masked letter is
-    // drawn in the same font, weight and size as its neighbours. Do not add letters from scripts
-    // Inter lacks (Armenian and others): the browser would draw them from a mismatched system font.
+    // lookalikes: only letters Inter has (no Armenian etc) so masked text matches font and weight
     const LOOKALIKE = {
         a: "\u0430", c: "\u0441", e: "\u0435", h: "\u04bb", i: "\u0456", j: "\u0458",
         o: "\u043e", p: "\u0440", s: "\u0455", v: "\u03bd", x: "\u0445", y: "\u0443",
@@ -63,8 +49,8 @@
         X: "\u0425", Y: "\u03a5", Z: "\u0396"
     };
     const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "TEXTAREA", "NOSCRIPT", "TITLE", "OPTION"]);
-    const nodeState = new WeakMap();      // text node -> { orig, masked }
-    const attached = new Set();           // { win, obs, level } for each document of paroxysm's own UI being masked
+    const nodeState = new WeakMap(); // text node -> { orig, masked }
+    const attached = new Set(); // { win, obs, level } per masked document
 
     function hash(str) {
         let h = 2166136261;
@@ -72,7 +58,7 @@
         return h >>> 0;
     }
 
-    // A repeatable value in [0, 1) for each position, so a given text always masks the same way.
+    // repeatable value in [0, 1) per position so same text masks same way
     function rnd(seed, i) {
         let t = (seed + Math.imul(i + 1, 0x9e3779b9)) | 0;
         t = Math.imul(t ^ (t >>> 15), 1 | t);
@@ -99,12 +85,12 @@
 
     function maskNode(node, level) {
         const st = nodeState.get(node);
-        if (st && node.data === st.masked) {           // our own value: recompute from the original
+        if (st && node.data === st.masked) { // our own value: recompute from original
             const next = maskText(st.orig, level);
             if (next !== node.data) { st.masked = next; node.data = next; }
             return;
         }
-        if (!eligible(node)) return;                   // new text, or text the page changed
+        if (!eligible(node)) return; // new text or text changed by page
         const masked = maskText(node.data, level);
         nodeState.set(node, { orig: node.data, masked });
         if (masked !== node.data) node.data = masked;
@@ -116,8 +102,7 @@
         while ((n = w.nextNode())) maskNode(n, level);
     }
 
-    // The real text of an element, ignoring masking. Code that reads text from paroxysm's own pages
-    // (for example Settings' search box) must use this instead of textContent.
+    // real text of element ignoring masking; use instead of textContent
     function plainText(el) {
         const w = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT);
         let out = "", n;
@@ -149,12 +134,11 @@
             });
             rec.obs.observe(doc.documentElement, { childList: true, subtree: true, characterData: true });
         }
-        walk(doc.documentElement, level);              // level 0 puts the original text back
+        walk(doc.documentElement, level); // level 0 restores original text
         if (level <= 0 && rec.obs) { rec.obs.disconnect(); rec.obs = null; }
     }
 
-    // Called by the shell each time a frame finishes loading. The panic key works everywhere; masking
-    // is applied to paroxysm's own pages only (proxied pages are left exactly as the site sent them).
+    // called per loaded frame; panic key works everywhere; masking on own pages only
     function watchWindow(win, proxied) {
         try { win.addEventListener("keydown", onKey, true); } catch { return; }
         if (proxied) return;
@@ -170,7 +154,7 @@
 
     function init() {
         window.addEventListener("keydown", onKey, true);
-        maskWindow(window);                              // the shell itself: tabs, address display, bookmarks, menus
+        maskWindow(window); // shell itself
         applyDisguise();
         S().onChange(() => { applyDisguise(); attached.forEach(refresh); });
     }
@@ -179,6 +163,6 @@
         init, watchWindow, panic, applyDisguise,
         setCapturing: on => { capturing = !!on; },
         plainText,
-        maskText                                      // exposed for testing
+        maskText // exposed for testing
     };
 })();

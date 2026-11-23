@@ -146,7 +146,7 @@
         .tk-c { color: var(--text-3); font-style: italic; } .tk-s { color: #8fd18f; } .tk-n { color: #e5a46a; } .tk-k { color: var(--accent-2); }
         html[data-theme="light"] .tk-s { color: #2c8a3d; } html[data-theme="light"] .tk-n { color: #b8641a; }
 
-        /* equations (MathML from paroxysm-ai.js) */
+        /* equations (MathML) */
         math { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", math; font-size: 1.14em; }
         .mathbox { margin: 0 0 var(--s3); padding: 4px 0; overflow-x: auto; text-align: center; }
         .mathbox math { display: block math; }
@@ -158,7 +158,7 @@
         /* composer */
         .dock { flex: none; width: 100%; max-width: 800px; margin: 0 auto; padding: 0 var(--s5) var(--s3); }
         .composer { display: flex; flex-direction: column; gap: var(--s2); padding: 10px 10px 10px 18px; border-radius: 26px; background: var(--surface-2); transition: box-shadow .12s var(--ease), padding .15s var(--ease), border-radius .15s var(--ease); }
-        /* with nothing typed it is as tall as the sidebar's search bar (38 px) */
+        /* compact: as tall as sidebar search bar (38 px) */
         .composer.compact { padding: 1px 1px 1px 18px; border-radius: var(--pill); }
         .composer.compact .c-row { align-items: center; }
         .composer.compact .c-row textarea { padding: 0; }
@@ -182,7 +182,7 @@
         .c-btn.send:disabled { background: var(--surface-3); color: var(--text-3); }
         .meter { margin-top: var(--s2); color: var(--text-3); font-size: 11.5px; text-align: center; }
 
-        /* popups and dialogs (glass comes from paroxysm.css) */
+        /* popups and dialogs (glass from paroxysm.css) */
         .pop { position: fixed; z-index: 45; width: 320px; max-width: calc(100vw - 16px); padding: var(--s1); border-radius: 20px; animation: menu-in .2s cubic-bezier(.2, 0, 0, 1) backwards; transform-origin: top right; }
         .pop > * { animation: menu-rise .4s cubic-bezier(.2, 0, 0, 1) backwards; animation-delay: calc(var(--i, 0) * 40ms + 50ms); }
         .pop.closing > * { animation: none; }
@@ -268,30 +268,27 @@
     </main>
 
     <script>
-        // AI page. The page draws; paroxysm-ai.js (window.paroxysmAI) does the work.
+        // page only draws; logic lives in paroxysm-ai.js
         const AI = window.paroxysmAI;
         const $ = id => document.getElementById(id);
         const { h, icon, openUrl, timeText, dialog, confirmBox, askText } = AI.ui;
 
-        // ── talking to the shell ──
         const inShell = window.parent !== window;
         const shell = msg => { if (inShell) window.parent.postMessage(msg, location.origin); };
         shell({ type: "paroxysm-title", title: "AI" });
 
-        // ── state ──
-        let index = [];          // one light entry per saved chat
-        let chat = null;         // the open chat: { id, title, created, updated, pinned, model, messages }
-        let run = null;          // the running request: { ctrl }
-        let pending = [];        // images waiting in the composer
-        let stick = true;        // keep the view at the bottom while an answer streams
+        let index = []; // one entry per saved chat
+        let chat = null; // open chat
+        let run = null; // running request: { ctrl }
+        let pending = []; // images waiting in composer
+        let stick = true; // stay at bottom while answer streams
         let query = "";
-        const refs = new WeakMap();   // message -> its elements
+        const refs = new WeakMap(); // message -> its elements
         const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
         const plain = el => window.paroxysmCloak?.plainText ? window.paroxysmCloak.plainText(el) : el.textContent;
 
         const thread = $("thread"), scroller = $("scroll"), input = $("input"), sendBtn = $("send");
 
-        // ── small helpers ──
         function toast(text) {
             document.querySelector(".toast")?.remove();
             const t = h("div", { class: "toast glass", text });
@@ -308,7 +305,6 @@
             ta.remove();
             return ok;
         }
-        // ── chats: create, open, save, rename, pin, delete ──
         const currentModel = () => AI.modelById(chat.model) ?? AI.MODELS.at(-1);
 
         function newChat() {
@@ -371,7 +367,6 @@
             if (chat?.id === id) newChat(); else renderList();
         }
 
-        // ── rendering: sidebar ──
         function groupOf(t) {
             const day = 86400e3, start = new Date(); start.setHours(0, 0, 0, 0);
             const d = start.getTime() - t;
@@ -403,7 +398,6 @@
             }
         }
 
-        // ── rendering: usage ──
         function sourceKind() { return AI.resolve(currentModel())?.kind ?? "none"; }
         function renderUsage() {
             const kind = sourceKind(), u = AI.usage.get(), cap = AI.settings.get().cap, reset = "Resets " + timeText(AI.nextReset());
@@ -425,7 +419,6 @@
             $("meter").textContent = meter;
         }
 
-        // ── rendering: header, composer state ──
         function renderHeader() {
             $("chatTitle").textContent = chat.title;
             $("modelName").textContent = currentModel().name;
@@ -439,7 +432,7 @@
             sendBtn.title = sendBtn.ariaLabel = busy ? "Stop" : "Send";
             sendBtn.disabled = !busy && !input.value.trim() && !pending.length;
             $("composer").classList.toggle("compact", !input.value && !pending.length);
-            autosize();                                   // the text box's padding changes with the compact state
+            autosize(); // padding changes with compact state
             const at = $("attach");
             at.replaceChildren(...pending.map((p, i) => h("div", { class: "thumb" }, h("img", { src: `data:${p.mime};base64,${p.data}`, alt: "" }),
                 h("button", { title: "Remove", "aria-label": "Remove image", onclick: () => { pending.splice(i, 1); renderComposer(); } }, icon("x")))));
@@ -449,7 +442,6 @@
             input.style.height = Math.min(input.scrollHeight, 200) + "px";
         }
 
-        // ── rendering: the thread ──
         const CHIPS = [
             ["atom", "Explain how photosynthesis works"], ["pen-line", "Help me write an email to my teacher"],
             ["code-xml", "Show me a Python function that sorts a list"], ["lightbulb", "Give me ideas for a science project"]];
@@ -534,7 +526,6 @@
             renderList(); renderHeader(); renderThread(); renderComposer(); renderUsage(); autosize();
         }
 
-        // ── scrolling ──
         function scrollDown(force) {
             if (force) stick = true;
             if (stick) scroller.scrollTop = scroller.scrollHeight;
@@ -546,7 +537,6 @@
         });
         $("jump").addEventListener("click", () => scrollDown(true));
 
-        // ── sending ──
         function errorOf(e) {
             const cap = AI.settings.get().cap;
             if (e.provider === "puter") return { kind: e.kind || "other", text: e.message };
@@ -570,7 +560,7 @@
             const m = { role: "assistant", content: "", thought: "", thoughtMs: 0, model: chat.model, ts: Date.now() };
             chat.messages.push(m);
             const owner = chat;
-            // the last user message and this answer are the "latest" pair (they get the edit / regenerate buttons)
+            // last user message and answer are latest pair (get edit and regenerate)
             renderThread();
             const ctrl = new AbortController();
             run = { ctrl };
@@ -634,7 +624,6 @@
             input.focus();
         }
 
-        // ── images in the composer ──
         async function addFiles(files) {
             const model = currentModel();
             if (!model.vision) { toast(`${model.name} can't see images. Pick another model.`); return; }
@@ -660,7 +649,6 @@
         sendBtn.addEventListener("click", () => run ? stopRun() : send());
         addEventListener("keydown", e => { if (e.key === "Escape" && run && !document.querySelector(".modal-back, .pop")) stopRun(); });
 
-        // ── model picker ──
         function closePop() {
             const p = document.querySelector(".pop");
             if (!p) return;
@@ -687,7 +675,6 @@
         addEventListener("blur", closePop);
         addEventListener("keydown", e => { if (e.key === "Escape") closePop(); });
 
-        // ── settings dialog (the same panel as Settings > AI) ──
         function openSettings(focusProvider) {
             AI.ui.dialog({
                 title: "AI settings", wide: true, actions: [{ label: "Done", primary: true }],
@@ -700,7 +687,6 @@
             if (!chat.messages.length) renderThread();
         }
 
-        // ── clicks inside the thread: copy code, open links through the proxy ──
         thread.addEventListener("click", e => {
             const copy = e.target.closest("[data-copy]");
             if (copy) {
@@ -712,7 +698,6 @@
             if (a) { e.preventDefault(); openUrl(a.href); }
         });
 
-        // ── sidebar and header buttons ──
         const SB_KEY = "paroxysm:ai-sidebar";
         const setSidebar = open => { document.body.classList.toggle("sb-hidden", !open); try { localStorage.setItem(SB_KEY, open ? "1" : "0"); } catch {} };
         $("sbHide").addEventListener("click", () => setSidebar(false));
@@ -724,7 +709,6 @@
         addEventListener("storage", e => { if (chat && e.key && e.key.startsWith("paroxysm:ai")) { renderUsage(); renderHeader(); } });
         setInterval(() => { if (chat) renderUsage(); }, 30000);
 
-        // ── start ──
         (async () => {
             let open = innerWidth > 820;
             try { const v = localStorage.getItem(SB_KEY); if (v != null && innerWidth > 820) open = v === "1"; } catch {}

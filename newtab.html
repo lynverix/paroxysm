@@ -44,15 +44,13 @@
         <div class="sc-edit"><button id="scEdit" type="button"></button></div>
     </div>
 
-    <!-- Three.js is pinned to an exact version and checked with an integrity hash.
-         If it can't load, the page falls back to a plain gradient. newtab-bg.js is React Bits Color Bends. -->
+    <!-- Three.js pinned with integrity hash; page falls back to plain gradient if it cannot load -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
         integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
         crossorigin="anonymous"></script>
     <script src="newtab-bg.js"></script>
     <script>
-        // The shell (index.html) resolves the text into a URL or a search,
-        // so there is a single place that decides how input is interpreted.
+        // shell resolves text to URL or search
         function navigate(query) {
             query = query.trim();
             if (!query) return;
@@ -64,13 +62,11 @@
             if (e.key === "Enter") navigate(e.target.value);
         });
 
-        // ── Shortcuts ──────────────────────────────────────────────────────────
-        // Sites and paroxysm's own pages, kept in the browser. System pages start at the end of the row and
-        // cannot be removed (so Settings is always reachable); new sites are added in front of them.
+        // system pages stay last and cannot be removed; new sites go in front
         const SC_KEY = "paroxysm:shortcuts";
         const SYSTEM = [
-            { id: "p-games",    kind: "page", label: "Games",    url: "paroxysm://games",    icon: "gamepad-2" },
-            { id: "p-ai",       kind: "page", label: "AI",       url: "paroxysm://assistant", icon: "sparkles" },
+            { id: "p-games", kind: "page", label: "Games", url: "paroxysm://games", icon: "gamepad-2" },
+            { id: "p-ai", kind: "page", label: "AI", url: "paroxysm://assistant", icon: "sparkles" },
             { id: "p-settings", kind: "page", label: "Settings", url: "paroxysm://settings", icon: "settings" }
         ];
         const SITES = [
@@ -107,7 +103,7 @@
             else window.parent.postMessage({ type: "newtab-navigate", url: sc.url }, "*");
         }
 
-        // Asks for a name and an address. Returns { label, url } or null.
+        // asks for name and address; returns { label, url } or null
         function askShortcut(existing) {
             return new Promise(resolve => {
                 const back = document.createElement("div");
@@ -195,7 +191,7 @@
                 if (!r) return;
                 const item = { id: "u-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: "site", ...r };
                 const firstPage = shortcuts.findIndex(y => y.kind === "page");
-                shortcuts.splice(firstPage < 0 ? shortcuts.length : firstPage, 0, item);   // in front of the system pages
+                shortcuts.splice(firstPage < 0 ? shortcuts.length : firstPage, 0, item); // in front of system pages
                 saveShortcuts();
             });
             grid.replaceChildren(...tiles, add);
@@ -204,7 +200,7 @@
         addEventListener("storage", e => { if (e.key === SC_KEY) { shortcuts = loadShortcuts(); renderShortcuts(); } });
         renderShortcuts();
 
-        // The logo follows the theme (dark and light have their own file).
+        // logo follows theme
         const logo = document.getElementById("logo");
         function syncLogo() {
             const mode = paroxysmSettings.get().theme === "light" ? "lightmode" : "darkmode";
@@ -213,7 +209,7 @@
         syncLogo();
         paroxysmSettings.onChange(syncLogo);
 
-        // If the logo image is missing, show the name as text instead.
+        // missing logo image: show name as text
         document.getElementById("logo").addEventListener("error", () => {
             const w = document.getElementById("logoWrap");
             w.className = "wordmark";

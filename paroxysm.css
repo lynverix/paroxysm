@@ -1,7 +1,4 @@
-/* paroxysm — shared styles for index.html, newtab.html (Home) and settings.html
-   Tokens first, then base, then components. Spacing uses a 4px scale.
-   The accent variables below are the defaults; paroxysm-settings.js overrides them.
-   Every dark surface is the accent mixed into black, so the whole UI follows the accent. */
+/* shared styles; accent defaults here are overridden by paroxysm-settings.js */
 
 @font-face {
     font-family: "Inter";
@@ -12,9 +9,7 @@
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-/* Cyrillic and Greek subsets of the same Inter, so the lookalike letters used by character masking
-   are drawn by Inter too (same weight, size and spacing) and not by a fallback system font.
-   They only load when such a character is on the page. Ranges are the standard fontsource ones. */
+/* Cyrillic and Greek Inter subsets so masked lookalike letters render in Inter */
 @font-face {
     font-family: "Inter";
     font-style: normal;
@@ -45,27 +40,27 @@
 :root {
     color-scheme: dark;
 
-    /* accent (#ae72df by default) */
+    /* accent (#ae72df default) */
     --accent-rgb: 174, 114, 223;
     --accent: rgb(var(--accent-rgb));
     --accent-2: #c398ea;
     --on-accent: #0a0a0a;
-    --accent-soft: rgba(var(--accent-rgb), .16);        /* hover tint on tabs and list items */
+    --accent-soft: rgba(var(--accent-rgb), .16); /* hover tint */
 
-    /* dark theme: the accent mixed into black. The percentages were matched to Fern's real colours. */
-    --bg: color-mix(in srgb, var(--accent) 4.5%, #000);        /* top bar, rail */
-    --surface: color-mix(in srgb, var(--accent) 7.5%, #000);   /* page area */
-    --surface-2: color-mix(in srgb, var(--accent) 12%, #000);  /* cards, fields */
-    --surface-3: color-mix(in srgb, var(--accent) 17%, #000);  /* rows inside cards, hovers */
+    /* dark theme: accent mixed into black (percentages matched to Fern) */
+    --bg: color-mix(in srgb, var(--accent) 4.5%, #000); /* top bar and rail */
+    --surface: color-mix(in srgb, var(--accent) 7.5%, #000); /* page area */
+    --surface-2: color-mix(in srgb, var(--accent) 12%, #000); /* cards and fields */
+    --surface-3: color-mix(in srgb, var(--accent) 17%, #000); /* rows in cards and hovers */
     --border: color-mix(in srgb, var(--accent) 14%, #000);
     --border-2: color-mix(in srgb, var(--accent) 24%, #000);
 
-    /* text and icons follow the accent slightly (icons use currentColor) */
+    /* text and icons follow accent slightly */
     --text: color-mix(in srgb, var(--accent) 3.5%, #fcfcfc);
     --text-2: color-mix(in srgb, var(--accent) 13%, #dddddd);
     --text-3: color-mix(in srgb, var(--accent) 12%, #8a8a8a);
 
-    /* the search pill on Home, over the moving background */
+    /* Home search pill over background */
     --pill-bg: color-mix(in srgb, var(--accent) 12%, rgb(0 0 0 / .62));
     --pill-bg-focus: color-mix(in srgb, var(--accent) 16%, rgb(0 0 0 / .72));
     --shadow: 0 8px 32px rgba(0, 0, 0, .35);
@@ -84,9 +79,9 @@
     --s6: 32px;
     --s7: 48px;
 
-    /* shape + layout */
-        --r-frame: 14px;      /* the page area */
-    --r-card: 20px;       /* settings cards */
+    /* shape and layout */
+        --r-frame: 14px; /* page area */
+    --r-card: 20px; /* settings cards */
     --pill: 999px;
     --rail-default: 232px;
     --bar: 46px;
@@ -95,7 +90,7 @@
     --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-/* light theme: the same recipe, mixed into white */
+/* light theme: mixed into white */
 :root[data-theme="light"] {
     color-scheme: light;
     --bg: color-mix(in srgb, var(--accent) 13%, #fff);
@@ -115,14 +110,13 @@
     --err: #d23f3f;
 }
 
-/* ── Base ─────────────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body { height: 100%; }
 html { background: var(--bg); }
-html.page { background: var(--surface); }      /* home and settings sit on the page colour */
+html.page { background: var(--surface); } /* home and settings use page colour */
 
 body {
     background: var(--bg);
@@ -151,20 +145,18 @@ input { font: inherit; color: inherit; }
 ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* ── Entrance animation (paroxysm-rise.js) ───────────────────────────── */
 html.rise-pending [data-rise] { opacity: 0; }
 @keyframes rise {
     from { opacity: 0; translate: 0 14px; }
-    to   { opacity: 1; translate: 0 0; }
+    to { opacity: 1; translate: 0 0; }
 }
 .rise {
     animation: rise .5s cubic-bezier(.2, 0, 0, 1) both;
     animation-delay: calc(var(--i, 0) * 65ms + 30ms);
 }
 
-/* ── Browser shell (index.html) ───────────────────────────────────────── */
 body.browser {
-    --rail: var(--rail-w, var(--rail-default));   /* --rail-w is set by dragging the handle */
+    --rail: var(--rail-w, var(--rail-default)); /* --rail-w set by resize drag */
     display: grid;
     grid-template-columns: var(--rail) 1fr;
     grid-template-rows: var(--bar) auto 1fr;
@@ -172,7 +164,7 @@ body.browser {
     height: 100vh;
     overflow: hidden;
 }
-/* horizontal tabs (the default): no sidebar, a tab strip under the top bar */
+/* horizontal tabs (default): no sidebar; tab strip under top bar */
 body.browser.layout-h {
     grid-template-columns: 1fr;
     grid-template-rows: var(--bar) auto auto 1fr;
@@ -185,7 +177,7 @@ body.browser.rail-collapsed { --rail: 60px; }
 body.resizing { cursor: col-resize; user-select: none; }
 body.resizing .frames iframe { pointer-events: none; }
 
-/* top bar: sidebar toggle + navigation on the left, address field centred, menu on the right */
+/* top bar: nav left; address centred; menu right */
 .toolbar {
     grid-area: bar;
     display: grid;
@@ -232,7 +224,7 @@ body.resizing .frames iframe { pointer-events: none; }
     outline: 0;
     font-size: 12.5px;
 }
-.url-field.styled input { color: transparent; }          /* the coloured copy below is shown instead */
+.url-field.styled input { color: transparent; } /* coloured copy is shown instead */
 .url-display {
     position: absolute;
     inset: 0;
@@ -247,7 +239,7 @@ body.resizing .frames iframe { pointer-events: none; }
     pointer-events: none;
 }
 .url-field.styled .url-display { display: block; }
-.url-display b { font-weight: 400; color: var(--text); }  /* the domain */
+.url-display b { font-weight: 400; color: var(--text); } /* domain */
 .url-btn {
     display: grid;
     place-items: center;
@@ -308,13 +300,13 @@ body.resizing .frames iframe { pointer-events: none; }
 .rail-links { display: flex; flex-direction: column; gap: var(--s1); margin-top: var(--s2); }
 .rail-link { flex: none; }
 
-/* hovering a tab you are not on: the accent, see-through */
+/* hover on inactive tab */
 .new-tab-btn:hover,
 .rail-link:hover,
 .tab:not(.active):hover { background: var(--accent-soft); color: var(--text); }
 
 .tab { cursor: pointer; user-select: none; }
-.tab.active { background: var(--accent); color: var(--on-accent); }   /* selected = solid accent, no outline */
+.tab.active { background: var(--accent); color: var(--on-accent); } /* selected = solid accent */
 
 .tab-favicon { width: 16px; height: 16px; flex: none; border-radius: 4px; }
 .tab-icon { width: 16px; height: 16px; }
@@ -345,7 +337,7 @@ body.resizing .frames iframe { pointer-events: none; }
 .tab-close:hover { background: rgba(255, 255, 255, .16); color: var(--text); }
 .tab.active .tab-close:hover { background: rgba(0, 0, 0, .18); color: var(--on-accent); }
 
-/* resize handle: sits in the gutter between the rail and the page */
+/* resize handle in gutter between rail and page */
 .rail-resizer {
     position: absolute;
     top: 0;
@@ -371,8 +363,7 @@ body.resizing .frames iframe { pointer-events: none; }
 body.resizing .rail-resizer::after { background: var(--text-3); height: 52px; }
 body.rail-collapsed .rail-resizer { display: none; }
 
-/* page area. Frames start hidden and fade in once loaded, so a refresh shows
-   the paroxysm colour instead of a white flash (index.html, watchFrame). */
+/* frames start hidden and fade in on load (watchFrame in index.html) */
 .frames {
     grid-area: frames;
     position: relative;
@@ -394,9 +385,9 @@ body.rail-collapsed .rail-resizer { display: none; }
 }
 .frames iframe.active { display: block; }
 .frames iframe.shown { opacity: 1; }
-.frames iframe.web { background: #fff; }       /* proxied sites expect a white canvas */
+.frames iframe.web { background: #fff; } /* proxied sites expect white canvas */
 
-/* collapsed rail (toggle, or a narrow window): icons only */
+/* collapsed rail: icons only */
 body.rail-collapsed .tab-title,
 body.rail-collapsed .tab-close,
 body.rail-collapsed .new-tab-btn span,
@@ -415,7 +406,6 @@ body.rail-collapsed .rail-link { justify-content: center; padding: 0; }
     .rail-resizer { display: none; }
 }
 
-/* ── notification pill ────────────────────────────────────────────────── */
 .pill {
     position: fixed;
     z-index: 30;
@@ -447,7 +437,6 @@ body.rail-collapsed .rail-link { justify-content: center; padding: 0; }
 .pill.warn::before { background: var(--warn); }
 .pill.error::before { background: var(--err); }
 
-/* ── home page (newtab.html) ─────────────────────────────────────────── */
 .bg-canvas {
     position: fixed;
     inset: 0;
@@ -478,7 +467,7 @@ body.newtab {
 }
 body.newtab > :not(.bg-canvas):not(svg) { position: relative; z-index: 1; }
 .logo { display: block; width: min(420px, 78vw); height: auto; }
-.wordmark {                                  /* text fallback if the logo image is missing */
+.wordmark { /* text fallback if logo is missing */
     font-size: 44px;
     font-weight: 600;
     letter-spacing: -.03em;
@@ -523,12 +512,9 @@ body.newtab > :not(.bg-canvas):not(svg) { position: relative; z-index: 1; }
 .search-btn:hover { filter: brightness(1.1); }
 .search-btn:active { transform: scale(.94); }
 
-/* ── empty pages (games, music, ai) ──────────────────────────────────── */
 body.empty-page { background: var(--surface); min-height: 100vh; }
 
-/* ── settings page (settings.html) ───────────────────────────────────────
-   No accent colour here, as in Fern: only surfaces and text (which carry a slight tint).
-   The accent shows up only inside the accent picker itself. */
+/* settings page: no accent colour except in accent picker */
 body.settings { background: var(--surface); height: 100%; overflow: hidden; --sel: color-mix(in srgb, var(--text) 13%, var(--surface-3)); }
 .settings-layout {
     height: 100vh;
@@ -581,13 +567,13 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
 .nav-item.active { background: var(--surface-3); color: var(--text); }
 .build-info { margin-top: auto; color: var(--text-3); font-size: 12px; line-height: 1.5; }
 
-/* the cards scroll inside their own frame, inset from the right edge */
+/* cards scroll in own frame inset from right edge */
 .settings-main { min-height: 0; overflow-y: auto; padding-right: var(--s4); }
 .settings-main::-webkit-scrollbar { width: 6px; }
 .settings-main::-webkit-scrollbar-track { background: color-mix(in srgb, var(--text) 6%, transparent); border-radius: var(--pill); margin: 2px 0; }
 .settings-main::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 24%, transparent); border-radius: var(--pill); }
 .settings-main::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text) 38%, transparent); }
-/* the same inset scrollbar for the dialogs and the assistant page's scrollers */
+/* same inset scrollbar for dialogs and assistant scrollers */
 .modal .m-body::-webkit-scrollbar, .sb-list::-webkit-scrollbar, .scroll::-webkit-scrollbar, .t-body::-webkit-scrollbar { width: 6px; }
 .modal .m-body::-webkit-scrollbar-track, .sb-list::-webkit-scrollbar-track, .scroll::-webkit-scrollbar-track, .t-body::-webkit-scrollbar-track { background: color-mix(in srgb, var(--text) 6%, transparent); border-radius: var(--pill); margin: 2px 0; }
 .modal .m-body::-webkit-scrollbar-thumb, .sb-list::-webkit-scrollbar-thumb, .scroll::-webkit-scrollbar-thumb, .t-body::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text) 24%, transparent); border-radius: var(--pill); }
@@ -639,7 +625,7 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
 }
 .text-input::placeholder { color: var(--text-3); }
 
-/* accent picker: named pills in their own colour */
+/* accent picker */
 .accent-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s2); }
 .accent-pill {
     position: relative;
@@ -687,7 +673,7 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
 .switch[aria-checked="true"] { background: var(--text-2); }
 .switch[aria-checked="true"]::after { transform: translateX(18px); background: var(--bg); }
 
-/* option lists: selected = a lighter row and a check mark */
+/* option lists: selected = lighter row and check mark */
 .choices { display: flex; flex-direction: column; gap: var(--s2); }
 .choices.two { display: grid; grid-template-columns: 1fr 1fr; }
 .choice {
@@ -749,7 +735,7 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
     font: 500 13px/1 ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
-/* proxy / wisp servers (names only; selectable) */
+/* wisp servers (names only) */
 .server-list { display: flex; flex-direction: column; gap: var(--s2); }
 .server-item {
     display: flex;
@@ -804,24 +790,21 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
     .accent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* ── paroxysm icon, layout button ─────────────────────────────────────── */
 .brand { display: grid; place-items: center; width: 28px; height: 28px; flex: none; margin-right: var(--s1); border-radius: 50%; transition: background .12s var(--ease); }
 .brand:hover { background: var(--surface-3); }
 .brand img { width: 20px; height: 20px; display: block; }
 body.layout-h #railToggle { display: none; }
 
-/* ── horizontal tab strip ─────────────────────────────────────────────── */
 .tab-strip { grid-area: tabs; display: flex; align-items: center; padding: 0 var(--s3) var(--s2); min-width: 0; }
 .tab-strip .tab-bar { flex: 1; min-width: 0; flex-direction: row; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .tab-strip .tab-bar::-webkit-scrollbar { display: none; }
 .tab-strip .tab { flex: 1 1 0; min-width: 104px; max-width: 240px; height: 32px; padding: 0 var(--s2) 0 var(--s3); gap: var(--s2); }
 .tab-strip .tab-title { font-size: 12.5px; }
-/* the New tab button moves into the top bar as a round icon button */
+/* New tab button moves into top bar as round icon button */
 .toolbar .new-tab-btn { position: static; order: 0; flex: none; width: 28px; height: 28px; margin: 0; padding: 0; justify-content: center; border-radius: 50%; background: none; }
 .toolbar .new-tab-btn span { display: none; }
 .toolbar .new-tab-btn .icon { width: 16px; height: 16px; }
 
-/* ── bookmarks bar ────────────────────────────────────────────────────── */
 .marks { grid-area: marks; display: none; align-items: center; gap: var(--s1); padding: 0 var(--s3) var(--s2); overflow-x: auto; scrollbar-width: none; }
 .marks.show { display: flex; }
 .marks::-webkit-scrollbar { display: none; }
@@ -835,7 +818,6 @@ body.layout-h #railToggle { display: none; }
 .mark img, .mark .icon { width: 14px; height: 14px; flex: none; border-radius: 3px; }
 .mark span { overflow: hidden; text-overflow: ellipsis; }
 
-/* ── small menu and dialog (shell) ────────────────────────────────────── */
 .ctx { position: fixed; z-index: 40; min-width: 168px; padding: var(--s1); border-radius: 16px; }
 .ctx button { display: flex; width: 100%; height: 34px; align-items: center; padding: 0 var(--s3); border-radius: var(--pill); color: var(--text-2); font-size: 13px; font-weight: 500; text-align: left; }
 .ctx button:hover { background: var(--accent-soft); color: var(--text); }
@@ -852,7 +834,7 @@ body.layout-h #railToggle { display: none; }
 .modal .btn:not(.primary):hover { background: color-mix(in srgb, var(--text) 15%, transparent); }
 .modal-text { color: var(--text-2); font-size: 13px; line-height: 1.5; }
 
-/* dialogs open and close like the menu: the backdrop fades, the box settles, its rows rise one after another */
+/* dialogs open and close as menu does */
 @keyframes fade-in { from { opacity: 0; } }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes modal-in { from { opacity: 0; scale: .96; translate: 0 12px; } }
@@ -866,7 +848,7 @@ body.layout-h #railToggle { display: none; }
 .modal.wide { display: flex; flex-direction: column; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow: hidden; }
 .modal .m-body { min-height: 0; overflow-y: auto; margin: 0 calc(var(--s2) * -1); padding: 0 var(--s2); }
 
-/* AI settings (used by the assistant page's dialog and by Settings > AI) */
+/* AI settings (assistant dialog and Settings > AI) */
 .ais { margin-top: var(--s5); }
 .ais:first-child { margin-top: var(--s3); }
 .ais-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
@@ -885,9 +867,7 @@ body.layout-h #railToggle { display: none; }
 .ais-usage { display: flex; flex-direction: column; gap: 3px; margin-top: var(--s2); color: var(--text-2); font-size: 12.5px; }
 .btn.danger { color: var(--err); }
 
-/* ── liquid glass (shared) ────────────────────────────────────────────── */
-/* A see-through, accent-tinted surface that blurs and saturates what is behind it, with a faint rim and sheen.
-   Pure CSS, so any popup gets it by adding class="glass" (the menu, context menus and dialogs already do). */
+/* see-through accent-tinted surface that blurs what is behind it; add class="glass" to any popup */
 .glass, .menu, .ctx, .modal {
     --glass-fill: color-mix(in srgb, var(--accent) 9%, rgb(12 10 18 / .38));
     --glass-sheen: rgb(255 255 255 / .06);
@@ -909,7 +889,6 @@ html[data-theme="light"] .glass, html[data-theme="light"] .menu, html[data-theme
     box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 -1px 0 rgb(255 255 255 / .25), 0 10px 36px rgb(40 20 70 / .16), 0 1px 3px rgb(40 20 70 / .1);
 }
 
-/* ── menu dropdown (top bar) ──────────────────────────────────────────── */
 .nav-btn.open { background: var(--surface-3); color: var(--text); }
 .menu {
     position: fixed; z-index: 45; width: 280px; max-height: calc(100vh - 64px); overflow-y: auto; scrollbar-width: none; padding: var(--s1);
@@ -917,7 +896,7 @@ html[data-theme="light"] .glass, html[data-theme="light"] .menu, html[data-theme
     animation: menu-in .24s cubic-bezier(.2, 0, 0, 1) backwards;
 }
 .menu::-webkit-scrollbar { display: none; }
-/* opening: the menu fades and settles, then its rows float up one after another (the same motion as paroxysm-rise.js) */
+/* opening: menu fades and settles then rows float up in turn */
 @keyframes menu-in { from { opacity: 0; scale: .95; translate: 0 -8px; } }
 @keyframes menu-rise { from { opacity: 0; translate: 0 10px; } }
 @keyframes menu-out { to { opacity: 0; scale: .96; translate: 0 -6px; } }
@@ -938,7 +917,6 @@ html[data-theme="light"] .glass, html[data-theme="light"] .menu, html[data-theme
 .menu-info .dot.warn { background: var(--warn); }
 .menu-info .dot.err { background: var(--err); }
 
-/* ── Home: shortcuts ──────────────────────────────────────────────────── */
 .shortcuts {
     width: 100%; max-width: 660px; padding: var(--s4); border-radius: 28px;
     background: var(--pill-bg); backdrop-filter: blur(14px); box-shadow: var(--shadow);

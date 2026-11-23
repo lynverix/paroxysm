@@ -14,7 +14,7 @@
         body.games { background: var(--surface); min-height: 100vh; }
         .wrap { max-width: 1120px; margin: 0 auto; padding: 32px var(--s5) var(--s7); }
 
-        /* header, search, tabs */
+        /* header */
         .g-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s4); }
         .g-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
         .seg.src { grid-template-columns: repeat(2, auto); margin-bottom: 0; }
@@ -91,13 +91,12 @@
     <div class="wrap" id="app"></div>
 
     <script>
-        // Games page. Two game sources sit behind one small interface (ready, list, random, cover, play):
-        //   gn-math  the default. A catalogue (zones.json) plus html game pages and covers from three jsDelivr repos.
-        //   LuminSDK headless mode; the SDK hands out single-use game links.
-        // The interface is ours. Browse view: paroxysm://games      Player view: paroxysm://games?g=<game id>&s=<gnmath|lumin>
-        // The LuminSDK script is pinned to a commit and checked with an integrity hash (it runs in paroxysm's own origin).
-        // gn-math is data only (JSON and html text); its game pages are third-party code, so they only ever run inside a
-        // sandboxed iframe with no access to paroxysm's origin (see GAME_SANDBOX).
+        // two game sources behind one interface: ready list random cover play
+        // gn-math: catalogue plus html pages and covers from jsDelivr repos
+        // LuminSDK: headless; SDK hands out single-use game links
+        // urls: paroxysm://games and paroxysm://games?g=<id>&s=<gnmath|lumin>
+        // LuminSDK script pinned to commit with integrity hash (runs in own origin)
+        // gn-math pages are third-party: only run in sandboxed iframe (see GAME_SANDBOX)
         const SDK_URL = "https://cdn.jsdelivr.net/gh/luminsdk/script@e1107337f26529e032d7873cbbb310d485d5d403/fonts.min.js";
         const SDK_SRI = "sha384-SgXJY217C22inNWfmmJ3ffxB1rIh4BmSkT9PDfvMqXoNI1p/td9wKrAjt8SboUHv";
         const GN = {
@@ -105,12 +104,11 @@
             html: "https://cdn.jsdelivr.net/gh/freebuisness/html@main/",
             covers: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/"
         };
-        const GN_ANALYTICS_ID = "G-L7856P3VNT";      // the original gn-math site's Google Analytics id, removed from every game page
-        // Games tagged for an emulator (js-dos, EmulatorJS...) need IndexedDB, which a sandboxed page does not have; in tests
-        // they showed a black screen or failed. They are hidden for now. Empty this list (or drop the sandbox) to bring them back.
+        const GN_ANALYTICS_ID = "G-L7856P3VNT"; // original site's Google Analytics id; stripped from game pages
+        // emulator games need IndexedDB (missing in sandbox): hidden; empty list to bring back
         const GN_HIDDEN_TAGS = ["emulator", "dos", "psx", "n64", "nds", "gba", "nes"];
-        // No allow-same-origin on purpose: the game gets an opaque origin, so it cannot read paroxysm's storage or its parent.
-        // Cost: a game that needs localStorage / IndexedDB / cookies may not save, or may not run.
+        // no allow-same-origin on purpose: opaque origin cannot read paroxysm storage
+        // cost: games needing localStorage/IndexedDB/cookies may not save
         const GAME_SANDBOX = "allow-scripts allow-pointer-lock allow-popups allow-forms allow-modals allow-downloads";
         const PAGE_SIZE = 36;
         const MAX_RECENTS = 24;
@@ -139,14 +137,13 @@
             return el;
         }
 
-        // ── talking to the paroxysm shell (index.html) ──
-        // Local pages ask the shell to open a tab, move this tab, or rename it.
+        // local pages ask shell to open move or rename a tab
         const inShell = window.parent !== window;
         function shell(msg, fallbackUrl) {
             if (inShell) window.parent.postMessage(msg, location.origin);
             else if (fallbackUrl) location.href = fallbackUrl;
         }
-        // A game with no source (saved before the picker existed) is a LuminSDK game.
+        // no source = LuminSDK game (saved before picker existed)
         const srcOf = g => g.s === "gnmath" ? "gnmath" : "lumin";
         const keyOf = g => srcOf(g) + ":" + g.id;
         const gameQuery = g => "?g=" + encodeURIComponent(g.id) + "&s=" + srcOf(g);
@@ -154,7 +151,6 @@
         const openGame = g => shell({ type: "paroxysm-open", url: gameUrl(g) }, "games.html" + gameQuery(g));
         const goGames = () => shell({ type: "paroxysm-open", url: "paroxysm://games" }, "games.html");
 
-        // ── the chosen source, favourites and recents (kept in the browser, shared by every Games tab) ──
         const STORE_KEY = "paroxysm:games";
         const slim = g => ({ id: g.id, name: g.name, category: g.category || "", s: srcOf(g) });
         function readStore() {
@@ -182,7 +178,7 @@
             writeStore(s);
         }
 
-        // ══ Source: LuminSDK ══
+        // source: LuminSDK
         let sdk = null;
         function loadSdk() {
             sdk ??= (async () => {
@@ -218,7 +214,7 @@
                 if (luminCovers.has(game.id)) return luminCovers.get(game.id);
                 await loadSdk();
                 let token = game.image_token || luminTokens.get(game.id);
-                if (!token) {                               // favourites and recents only keep id and name
+                if (!token) { // favourites and recents keep only id and name
                     const r = await Lumin.getGames({ q: game.name, limit: 24 });
                     r.games.forEach(x => luminTokens.set(x.id, x.image_token));
                     token = luminTokens.get(game.id);
@@ -228,7 +224,7 @@
                 luminCovers.set(game.id, url);
                 return url;
             },
-            // Each call asks LuminSDK for a fresh single-use game link.
+            // fresh single-use link per call
             async play(id) {
                 await loadSdk();
                 const res = await Lumin.getGameUrl(id);
@@ -237,9 +233,9 @@
             }
         };
 
-        // ══ Source: gn-math ══
-        // zones.json lists every game; "{HTML_URL}" and "{COVER_URL}" in it stand for the html and covers repos.
-        // jsDelivr serves .html as text/plain, so a game page is fetched as text and shown through srcdoc.
+        // source: gn-math
+        // zones.json lists games; {HTML_URL} and {COVER_URL} stand for html and covers repos
+        // jsDelivr serves .html as text/plain: fetch as text and use srcdoc
         let gnData = null;
         function gnLoad() {
             gnData ??= fetch(GN.assets + "zones.json")
@@ -248,7 +244,7 @@
                 .then(zones => {
                     const byId = new Map();
                     for (const z of Array.isArray(zones) ? zones : []) {
-                        // skips the "suggest games" entry (id -1, a Discord link), the "[!] COMMENTS" widget and anything that is not a game page
+                        // skips id -1 (Discord) and [!] pseudo-entries
                         if (!z || !(z.id >= 0) || typeof z.name !== "string" || z.name.startsWith("[!]") || typeof z.url !== "string" || !z.url.startsWith("{HTML_URL}/")) continue;
                         const tags = Array.isArray(z.special) ? z.special : [];
                         if (tags.some(t => GN_HIDDEN_TAGS.includes(t))) continue;
@@ -261,7 +257,7 @@
             gnData.catch(() => { gnData = null; });
             return gnData;
         }
-        // Removes the original site's analytics snippet (a gtag.js script and its inline setup), which sits before the doctype.
+        // strips original site's analytics snippet (before doctype)
         function stripAnalytics(html) {
             const head = html.slice(0, 2000)
                 .replace(/<script[^>]*googletagmanager\.com\/gtag\/js\?id=[^>]*>\s*<\/script>\s*/i, m => m.includes(GN_ANALYTICS_ID) ? "" : m)
@@ -295,12 +291,7 @@
             }
         };
 
-        // ── storage for sandboxed games ──
-        // A sandboxed game has no storage of its own: localStorage, sessionStorage and cookies throw there, and many games
-        // crash on that. A small script (storageBridge) is put at the top of the game's page that gives it in-memory
-        // versions instead. localStorage is also saved by this page, in paroxysm's storage under the game's key, so a game
-        // keeps its progress. The page only ever stores the text it receives; it never runs or parses it as code.
-        // Not covered: IndexedDB, Cache Storage and cookies across reloads.
+        // sandboxed games have no storage: bridge gives in-memory versions; page persists localStorage
         const SAVES_KEY = "paroxysm:game-saves", MAX_SAVES = 10, MAX_SAVE_CHARS = 300000;
         function readSaves() {
             try { const d = JSON.parse(localStorage.getItem(SAVES_KEY) || "{}"); return d && typeof d === "object" ? d : {}; } catch { return {}; }
@@ -311,7 +302,7 @@
             Object.keys(all).sort((a, b) => all[b].t - all[a].t).slice(MAX_SAVES).forEach(k => delete all[k]);
             try { localStorage.setItem(SAVES_KEY, JSON.stringify(all)); } catch {}
         }
-        // This function's source is copied into the game's page, so it must not use anything from this page.
+        // source is copied into game page: use nothing from this page
         function storageBridge(snapJson) {
             const define = (obj, name, desc) => { try { Object.defineProperty(obj, name, { configurable: true, ...desc }); } catch {} };
             const make = (init, onChange) => {
@@ -351,7 +342,7 @@
             const snap = readSaves()[key]?.d;
             const call = "(" + storageBridge.toString() + ")(" + JSON.stringify(typeof snap === "string" ? snap : "{}").replace(/</g, "\\u003c") + ")";
             const tag = "<script>" + call + "<\/script>";
-            const at = /<head[^>]*>/i.exec(html) ?? /^\s*<!doctype[^>]*>/i.exec(html);   // after <head>, so the doctype stays first
+            const at = /<head[^>]*>/i.exec(html) ?? /^\s*<!doctype[^>]*>/i.exec(html); // after <head> so doctype stays first
             const i = at ? at.index + at[0].length : 0;
             return html.slice(0, i) + tag + html.slice(i);
         }
@@ -364,15 +355,14 @@
         let SRC = DEFAULT_SOURCE;
         const src = () => sources[SRC];
 
-        // Covers: resolved lazily (only when a card scrolls into view), a few at a time. A task keeps its slot until
-        // its image has loaded (or failed), so large covers do not all download at once.
+        // covers load lazily a few at a time; a task keeps its slot until image loads or fails
         let running = 0; const queue = [];
         function schedule(fn) { queue.push(fn); pump(); }
         function pump() { while (running < 6 && queue.length) { running++; queue.shift()().finally(() => { running--; pump(); }); } }
         async function loadCover(game, img) {
             try {
                 const url = await sources[srcOf(game)].cover(game);
-                if (!url || !img.isConnected) return;       // a card that was already replaced does not need its cover
+                if (!url || !img.isConnected) return; // card already replaced
                 await new Promise(done => {
                     const t = setTimeout(done, 20000);
                     const end = () => { clearTimeout(t); done(); };
@@ -423,7 +413,6 @@
                 h("button", { class: "btn", text: "Try again", onclick: retry }));
         }
 
-        // ══ Browse view ══
         const view = { mode: "browse", tab: "browse", query: "", games: [], total: 0, page: 0, pages: 1, req: 0 };
         const els = {};
 
@@ -448,7 +437,7 @@
             window.paroxysmRise?.run(app);
             updateCounts();
             renderList();
-            src().ready().catch(() => {});                   // warm up; loadBrowse shows the error
+            src().ready().catch(() => {}); // warm up; loadBrowse shows error
             loadBrowse(true);
         }
 
@@ -457,7 +446,7 @@
             els.grid.replaceChildren(failure(e.message || "Something went wrong.", () => { els.grid.replaceChildren(status("Loading...")); loadBrowse(true); }));
         }
 
-        // Picking a source forgets the list of the other one; the choice is remembered.
+        // picking a source forgets other one's list; choice is remembered
         function setSource(k) {
             if (k === SRC) return;
             SRC = k;
@@ -528,8 +517,7 @@
             try { const [g] = await src().random(1); if (g) openGame(g); } catch (e) { showFailure(e); }
         }
 
-        // ══ Player view ══
-        // Other games on the player page replace this game in the same tab.
+        // other games on player page replace this game in same tab
         const openGameHere = g => shell({ type: "newtab-navigate", url: gameUrl(g) }, "games.html" + gameQuery(g));
 
         const errorText = e => String((e && (e.message || e.error || e.code)) || e || "Unknown error");
@@ -580,7 +568,7 @@
                     iframe?.remove();
                     iframe = h("iframe", { title: game.name, allow: "autoplay; fullscreen; pointer-lock; gamepad", allowfullscreen: "" });
                     iframe.addEventListener("load", () => { clearTimeout(slow); overlay.hidden = true; });
-                    if (res.html != null) {                      // third-party page: opaque origin, with the storage bridge
+                    if (res.html != null) { // third-party page: opaque origin with storage bridge
                         gameFrame = iframe; gameKey = keyOf(game);
                         iframe.setAttribute("sandbox", GAME_SANDBOX);
                         iframe.srcdoc = withStorageBridge(res.html, gameKey);
@@ -593,7 +581,7 @@
                     say("This game couldn't load", errorText(e), true);
                     return;
                 }
-                if (!sideL.children.length) {                    // the other games, after the game itself has started
+                if (!sideL.children.length) { // other games after game started
                     try {
                         const others = (await source.random(18)).filter(g => g.id !== id);
                         others.slice(0, 8).forEach((g, i) => (i % 2 ? sideR : sideL).append(card(g, openGameHere)));
@@ -604,12 +592,11 @@
             start();
         }
 
-        // ── start ──
         const params = new URLSearchParams(location.search);
         const param = params.get("g");
         if (param) {
-            // Any id is fine here: it is only passed to the source and shown as text, never put into HTML.
-            // A link without s=... was made before the picker existed, so it is a LuminSDK game.
+            // any id is fine: only passed to source and shown as text
+            // no s= means LuminSDK (pre-picker link)
             if (param.length <= 300) renderPlayer(param, params.get("s") === "gnmath" ? "gnmath" : "lumin");
             else app.replaceChildren(h("div", { class: "notice" }, h("h3", { text: "That game link isn't valid" }), h("button", { class: "btn", text: "Back to games", onclick: goGames })));
         } else { SRC = readStore().source; renderBrowse(); }

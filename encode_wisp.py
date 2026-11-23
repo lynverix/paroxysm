@@ -1,12 +1,10 @@
-"""Encode wisp server URLs for paroxysm.config.js.
+"""Encode wisp URLs for paroxysm.config.js.
 
-Usage (Windows):   python encode_wisp.py urls.txt
-                   python encode_wisp.py            (then paste URLs, one per line, and press Ctrl+Z, Enter)
+Usage: python encode_wisp.py urls.txt
+Or run without arguments and paste URLs (finish with Ctrl+Z then Enter on Windows).
 
-urls.txt holds one ws:// or wss:// URL per line. Keep it out of git (it is the readable list).
-The output is the text to paste between the brackets of wispServers in paroxysm.config.js.
-This is the same reversed-and-base64 idea Fern uses: it hides the URLs from a casual look,
-it does not make them secret.
+urls.txt holds one ws:// or wss:// URL per line; keep it out of git.
+Output goes between the brackets of wispServers. It hides URLs from casual view and is not a secret.
 """
 import base64
 import sys

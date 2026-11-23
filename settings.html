@@ -54,7 +54,6 @@
         </aside>
 
         <main class="settings-main" id="settingsMain">
-            <!-- Appearance -->
             <section class="settings-section active" id="sec-appearance">
                 <div class="card" data-rise>
                     <h3 class="card-title">Accent color</h3>
@@ -82,7 +81,6 @@
                 </div>
             </section>
 
-            <!-- Search -->
             <section class="settings-section" id="sec-search">
                 <div class="card" data-rise>
                     <h3 class="card-title">Search engine</h3>
@@ -95,7 +93,6 @@
                 </div>
             </section>
 
-            <!-- Proxy -->
             <section class="settings-section" id="sec-proxy">
                 <div class="card" data-rise>
                     <h3 class="card-title">Wisp server</h3>
@@ -115,10 +112,9 @@
                 </div>
             </section>
 
-            <!-- AI (built by renderAI from paroxysm-ai-settings.js) -->
+            <!-- filled by renderAI -->
             <section class="settings-section" id="sec-ai"></section>
 
-            <!-- Cloaking -->
             <section class="settings-section" id="sec-cloaking">
                 <div class="card" data-rise>
                     <h3 class="card-title">Tab disguise</h3>
@@ -157,10 +153,9 @@
                 </div>
             </section>
 
-            <!-- Dev: empty for now -->
+            <!-- Dev: empty -->
             <section class="settings-section" id="sec-dev"></section>
 
-            <!-- About -->
             <section class="settings-section" id="sec-about">
                 <div class="card" data-rise>
                     <h3 class="card-title">paroxysm</h3>
@@ -193,10 +188,10 @@
         const cloak = () => window.parent && window.parent.paroxysmCloak;
         const config = () => (window.parent && window.parent.PAROXYSM_CONFIG) || window.PAROXYSM_CONFIG || {};
         const SVG = "http://www.w3.org/2000/svg";
-        // Text as written, even while character masking is on (masked text would not match what you type).
+        // text as written even while masking is on
         const plain = el => (cloak() && cloak().plainText ? cloak().plainText(el) : el.textContent);
 
-        // Small DOM helpers (no innerHTML with text we did not write).
+        // DOM helpers (no innerHTML with foreign text)
         function icon(name) {
             const svg = document.createElementNS(SVG, "svg");
             svg.setAttribute("class", "icon");
@@ -218,14 +213,13 @@
             return el;
         }
 
-        // A list of options where one is selected.
+        // list of options with one selected
         function choiceList(container, items, selectedId, onPick) {
             container.replaceChildren(...items.map(it =>
                 h("button", { class: "choice" + (it.id === selectedId ? " selected" : ""), onclick: () => onPick(it.id) },
                     h("span", { text: it.label }), icon("check"))));
         }
 
-        // ── section nav ──
         function showSection(name) {
             document.querySelectorAll(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.section === name));
             document.querySelectorAll(".settings-section").forEach(sec => sec.classList.toggle("active", sec.id === "sec-" + name));
@@ -242,8 +236,7 @@
             showSection(btn.dataset.section);
         }));
 
-        // ── search settings ──
-        // Typing shows every card that matches, from any section; clearing returns to the chosen section.
+        // typing shows every matching card from any section; clearing returns to chosen section
         function applySearch() {
             const q = $("settingsSearch").value.trim().toLowerCase();
             const cards = document.querySelectorAll(".settings-section .card");
@@ -262,7 +255,6 @@
         }
         $("settingsSearch").addEventListener("input", applySearch);
 
-        // ── appearance ──
         const accentGrid = $("accentGrid");
         S.accents.forEach(a => accentGrid.append(h("button", {
             class: "accent-pill", style: `--c:${a.hex}`, "data-hex": a.hex, onclick: () => S.set({ accent: a.hex })
@@ -302,7 +294,6 @@
                 h("button", { class: "icon-btn", title: "Move down", "aria-label": "Move " + SIDEBAR_LABELS[key][0] + " down", disabled: i === order.length - 1, onclick: () => move(i, 1) }, icon("chevron-down")))));
         }
 
-        // ── search engine ──
         function renderEngines() {
             const items = Object.entries(S.engines).map(([id, e]) => ({ id, label: e.name + (id === S.defaults.searchEngine ? " (default)" : "") }));
             items.push({ id: "custom", label: "Custom" });
@@ -318,7 +309,6 @@
             if (ok) S.set({ customSearchUrl: v });
         });
 
-        // ── proxy ──
         let testResults = {};
         let wispMessage = "";
         function renderServers() {
@@ -377,7 +367,6 @@
         $("wispInput").addEventListener("keydown", e => { if (e.key === "Enter") addWisp(); });
         setInterval(() => { if ($("sec-proxy").classList.contains("active") || main.classList.contains("searching")) renderServers(); }, 1500);
 
-        // ── cloaking ──
         function renderCloaks() {
             choiceList($("cloakList"), S.cloaks.map(c => ({ id: c.id, label: c.label })), S.get().tabCloak, id => S.set({ tabCloak: id }));
         }
@@ -414,7 +403,6 @@
         }
         $("panicCustom").addEventListener("input", e => S.set({ panicCustomUrl: e.target.value }));
 
-        // ── about ──
         function renderAbout() {
             const a = app();
             const info = a ? a.about() : {};
@@ -434,8 +422,7 @@
             $("buildInfo").textContent = "paroxysm v" + (info.version ?? cfg.version ?? "dev");
         }
 
-        // ── keep everything in step with the stored settings ──
-        // AI: the same panel as the assistant page's dialog, drawn as cards
+        // AI: same panel as assistant dialog drawn as cards
         function renderAI() {
             if (!window.paroxysmAI?.ui) return;
             $("sec-ai").replaceChildren(...window.paroxysmAI.ui.aiSettings({ style: "card" }));

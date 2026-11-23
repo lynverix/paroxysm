@@ -7,16 +7,9 @@
 </head>
 <body>
 <script>
-// paroxysm: runs Puter.js in isolation. The AI page puts this file in an iframe with sandbox="allow-scripts" (no
-// allow-same-origin), so Puter's code has an opaque origin and can't read paroxysm's storage, keys or chats. The CSP above
-// limits where it can connect. The AI page talks to it with postMessage (it checks that messages come from this frame, and
-// this file checks that they come from its parent). Puter.js is a pinned npm version, fetched from jsDelivr and checked
-// against an integrity hash before it runs. Sign-in happens in the AI page (Puter.js refuses to sign in from a sandboxed
-// frame); the page hands over the resulting token here.
-// When "Send AI requests through the proxy" is on, the page tells this frame so ({ t: "proxy", on: true }). Puter.js makes
-// its API calls with XMLHttpRequest, so the frame then swaps in a small XMLHttpRequest of its own that hands each request
-// to the page (which sends it through the wisp transport, to puter.com hosts only) and streams the answer back, and it
-// blocks WebSockets (Puter's live-events socket would connect directly).
+// runs Puter.js sandboxed (no allow-same-origin) so it cannot read paroxysm storage; CSP limits connections
+// talks to AI page via postMessage; Puter.js is pinned and integrity-checked; sign-in happens in AI page
+// proxy mode: swaps in own XMLHttpRequest that hands requests to page (wisp transport) and blocks WebSockets
 (() => {
     const SRC = "https://cdn.jsdelivr.net/npm/@heyputer/puter.js@2.6.5/dist/puter.cjs";
     const SRI = "sha384-cxUuIyzn+eZySBzLjYzu2EPLDC3wj9mbKTQdeLvXjlhkpHME6nS7DzYsio5hj6U0";

@@ -1,28 +1,20 @@
-// paroxysm: Home page background (Three.js).
-//
-// This is React Bits "Color Bends" (https://reactbits.dev/backgrounds/color-bends, MIT + Commons
-// Clause, (c) David Haz), ported from React to plain JavaScript. The vertex shader, the fragment
-// shader and the default props below are the upstream ones, unchanged, except that mouseInfluence
-// is 0 and colors is the accent. Only the wiring around them differs: it draws on the page's own
-// canvas, listens for the pointer on the whole page, follows Settings > Appearance > Animated
-// background, and follows the accent colour (the theme shows through as the page colour behind it).
-//
-// Everything you are likely to want to change is in PROPS below.
-// Three.js is loaded from a CDN by newtab.html; if it can't be loaded (offline, blocked)
-// the page falls back to a plain gradient and nothing else is affected.
+// Home page background: React Bits "Color Bends" (MIT + Commons Clause; David Haz) ported to plain JS
+// shaders and default props are upstream's except mouseInfluence 0 and colors = accent
+// source: https://reactbits.dev/backgrounds/color-bends
+// Three.js comes from CDN via newtab.html; falls back to plain gradient
 (() => {
     const MAX_COLORS = 8;
 
     const PROPS = {
         rotation: 90,
         speed: 0.2,
-        colors: ["#AE72DF"],     // the default accent; at run time the current accent replaces it
+        colors: ["#AE72DF"], // default accent; replaced at run time
         transparent: true,
         autoRotate: 0,
         scale: 1,
         frequency: 1,
         warpStrength: 1,
-        mouseInfluence: 0,       // upstream default is 1; set to 0 for paroxysm
+        mouseInfluence: 0, // upstream default is 1
         parallax: 0.5,
         noise: 0.15,
         iterations: 1,
@@ -41,7 +33,7 @@
 
     if (!window.THREE) return fallback("Three.js did not load");
 
-    // ── upstream shaders (verbatim) ─────────────────────────────────────────
+    // upstream shaders (verbatim)
     const frag = `
 #define MAX_COLORS ${MAX_COLORS}
 uniform vec2 uCanvas;
@@ -150,7 +142,7 @@ void main() {
   gl_Position = vec4(position, 1.0);
 }
 `;
-    // ── end of upstream shaders ─────────────────────────────────────────────
+    // end upstream shaders
 
     let renderer, material, scene, camera, clock, setColors;
     try {
@@ -196,7 +188,7 @@ void main() {
         renderer.setClearColor(0x000000, PROPS.transparent ? 0 : 1);
         clock = new THREE.Clock();
 
-        // colours (the same hex parsing as upstream)
+        // colours (hex parsing as upstream)
         const toVec3 = hex => {
             const h = hex.replace("#", "").trim();
             const v = h.length === 3
@@ -222,7 +214,7 @@ void main() {
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const wantsMotion = () => !reduceMotion && paroxysmSettings.get().animatedBackground !== false;
 
-    // pointer, smoothed the way upstream does (only parallax reads it while mouseInfluence is 0)
+    // pointer smoothed as upstream (only parallax reads it while mouseInfluence is 0)
     const pointerTarget = new THREE.Vector2(0, 0);
     const pointerCurrent = new THREE.Vector2(0, 0);
     const POINTER_SMOOTH = 8;
@@ -274,13 +266,13 @@ void main() {
     document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
     canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); stop(); fallback("WebGL context lost"); });
 
-    // Settings > Appearance > Animated background
+    // follows Settings > Appearance > Animated background
     paroxysmSettings.onChange(() => {
         setColors(accentColors());
         if (wantsMotion()) start(); else { stop(); renderer.render(scene, camera); }
     });
 
-    // first frame straight away (also the still frame when motion is off)
+    // first frame straight away (still frame when motion is off)
     material.uniforms.uTime.value = elapsed;
     material.uniforms.uRot.value.set(Math.cos((PROPS.rotation * Math.PI) / 180), Math.sin((PROPS.rotation * Math.PI) / 180));
     renderer.render(scene, camera);

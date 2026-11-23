@@ -1,8 +1,4 @@
-// paroxysm: the parts of the AI page that other pages share (needs paroxysm-ai.js first), as paroxysmAI.ui:
-//   dialog, confirmBox, askText   animated glass dialogs (they fade and settle in, rows rise one by one, fade out on close)
-//   aiSettings                    the AI settings (keys, proxy, daily limit, instructions, usage, delete chats), drawn
-//                                 as cards for Settings > AI or as sections inside the assistant page's dialog
-// Written for paroxysm, no libraries.
+// shared AI page parts as paroxysmAI.ui (needs paroxysm-ai.js first)
 (() => {
     const AI = window.paroxysmAI;
     if (!AI) return;
@@ -34,15 +30,14 @@
     const openUrl = url => inShell ? window.parent.postMessage({ type: "paroxysm-open-url", url }, location.origin) : window.open(url, "_blank", "noopener");
     const timeText = t => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-    // ── dialogs ────────────────────────────────────────────────────────────
     function dismiss(back) {
         if (!back.isConnected || back.classList.contains("closing")) return;
-        if (getComputedStyle(back).animationName === "none") { back.remove(); return; }      // reduced motion
+        if (getComputedStyle(back).animationName === "none") { back.remove(); return; } // reduced motion
         back.classList.add("closing");
         back.addEventListener("animationend", e => { if (e.target === back) back.remove(); });
         setTimeout(() => back.remove(), 400);
     }
-    // content: a node or an array of nodes (each one rises in turn). actions: [{ label, primary, danger, run }]
+    // content: node or array of nodes. actions: [{ label, primary, danger, run }]
     function dialog({ title, content, actions = [], wide = false, onclose }) {
         const items = [].concat(content);
         items.forEach((c, i) => c.style?.setProperty("--i", i));
@@ -82,8 +77,7 @@
         });
     }
 
-    // ── AI settings ────────────────────────────────────────────────────────
-    // style: "card" (Settings > AI) or "dialog" (inside the assistant page). Returns an array of elements.
+    // style: "card" (Settings > AI) or "dialog" (assistant page); returns array of elements
     function aiSettings({ style = "card", focusProvider = "", onChange, onDeleteAll, confirm = confirmBox } = {}) {
         const card = style === "card";
         const changed = () => onChange?.();
@@ -120,7 +114,7 @@
                 body: h("div", {}, h("div", { class: "ais-key" }, field, h("button", { class: "btn", text: "Test and save", onclick: save }), h("button", { class: "btn", text: "Remove", onclick: remove })), stat)
             });
         };
-        // Puter: sign in with a Puter account instead of a key. Puter.js (in an isolated frame) loads only once this is used.
+        // Puter: sign in instead of key; Puter.js loads only once used
         const puterRow = () => {
             const box = h("div"), stat = h("div", { class: "ais-stat" });
             const say = (kind, text) => { stat.className = "ais-stat " + kind; stat.textContent = text; };

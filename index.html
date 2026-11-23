@@ -93,14 +93,10 @@
         const { defaultConfig } = $scramjet;
         const EpoxyTransport = self.EpoxyTransport.default;
 
-        //── Wisp servers ───────────────────────────────────────────────────────
-        // The built-in list lives in paroxysm.config.js, encoded (see encode_wisp.py), and is shown in
-        // the UI as "Wisp Server 1", "Wisp Server 2", ... Servers the user adds in Settings > Proxy
-        // are kept in the settings and shown as "Custom Server 1", ... Ordered fallback: the picked
-        // server (if any) is tried first, then the rest in order. The UI never shows the URLs.
+        // built-in servers from paroxysm.config.js (encoded) plus custom ones from settings
         const decodeWisp = s => { try { return atob(s).split("").reverse().join(""); } catch { return ""; } };
         const BUILTIN_WISP = (window.PAROXYSM_CONFIG?.wispServers ?? []).map(decodeWisp).filter(Boolean);
-        const WISP_SERVERS = [];          // { id, name, url, custom }; init() reads WISP_SERVERS[activeServerIdx].url
+        const WISP_SERVERS = []; // { id, name, url, custom }
         let activeServerIdx = 0;
         let activeServerId = null;
 
@@ -114,31 +110,28 @@
         }
         rebuildServers();
 
-        const LOCAL_SCHEME     = "paroxysm://";
-        // Local pages. "newtab" stays as an accepted alias for home.
+        const LOCAL_SCHEME = "paroxysm://";
+        // "newtab" is an alias for home
         const LOCAL_ROUTES = {
-            home:     { file: "newtab.html",   title: "Home",     icon: "house" },
-            games:    { file: "games.html",    title: "Games",    icon: "gamepad-2" },
+            home: { file: "newtab.html", title: "Home", icon: "house" },
+            games: { file: "games.html", title: "Games", icon: "gamepad-2" },
             assistant: { file: "assistant.html", title: "AI", icon: "sparkles" },
             settings: { file: "settings.html", title: "Settings", icon: "settings" }
         };
-        const HOME_URL         = LOCAL_SCHEME + "home";
-        const SETTINGS_URL     = LOCAL_SCHEME + "settings";
+        const HOME_URL = LOCAL_SCHEME + "home";
+        const SETTINGS_URL = LOCAL_SCHEME + "settings";
 
-        const tabBar        = document.getElementById("tabBar");
-        const newTabBtn     = document.getElementById("newTabBtn");
-        const framesEl      = document.getElementById("frames");
-        const urlInput      = document.getElementById("urlInput");
-        const urlIconUse    = document.getElementById("urlIconUse");
-        const pillEl        = document.getElementById("pill");
-        const railLinks     = document.getElementById("railLinks");
+        const tabBar = document.getElementById("tabBar");
+        const newTabBtn = document.getElementById("newTabBtn");
+        const framesEl = document.getElementById("frames");
+        const urlInput = document.getElementById("urlInput");
+        const urlIconUse = document.getElementById("urlIconUse");
+        const pillEl = document.getElementById("pill");
+        const railLinks = document.getElementById("railLinks");
 
         let scramjet = null;
         let ready = false;
 
-        // ── Notifications ──────────────────────────────────────────────────────
-        // A small pill, shown only when there is something to report.
-        // There is no permanent connection indicator.
         let pillTimer = null;
 
         function showPill(kind, message, ms = 3500) {
@@ -152,25 +145,21 @@
             clearTimeout(pillTimer);
             pillEl.classList.remove("show");
         }
-        window.paroxysmPill = showPill;     // used by paroxysm-transport.js
+        window.paroxysmPill = showPill; // used by paroxysm-transport.js
 
-        // ── Status ─────────────────────────────────────────────────────────────
-        // init() still reports through setStatus(); only problems are surfaced.
+        // init() reports here; only problems show
         const STATUS_TEXT = {
             "Not ready, wait...": "Can't reach a wisp server. Retrying…",
-            "Transport failed":   "The network transport failed to start."
+            "Transport failed": "The network transport failed to start."
         };
 
         function setStatus(state, message) {
-            if (state === "warn")       showPill("warn", STATUS_TEXT[message] ?? message, 0); // stays while retrying
+            if (state === "warn") showPill("warn", STATUS_TEXT[message] ?? message, 0); // stays while retrying
             else if (state === "error") showPill("error", STATUS_TEXT[message] ?? message, 10000);
-            else                        hidePill();                                          // connecting / ready
+            else hidePill(); // connecting or ready
         }
 
-        // ── Wisp server selection ──────────────────────────────────────────────
-        // WISP_SERVERS is an ordered fallback list: the first endpoint that accepts a
-        // connection wins. init() is not modified; it is wrapped below so the endpoint is
-        // chosen before it runs, then init() probes and uses that endpoint exactly as before.
+        // first reachable server wins; init() is wrapped below to pick it first
         const PROBE_CAP_MS = 5000;
 
         function probeWithin(url, ms) {
@@ -180,15 +169,14 @@
             ]);
         }
 
-        // The order to try servers in: the picked one first (if any), then the rest in list order.
+        // picked server first then list order
         function serverOrder(auto) {
             const all = WISP_SERVERS.map((_, i) => i);
             const pick = auto ? -1 : WISP_SERVERS.findIndex(x => x.id === paroxysmSettings.get().wispPreferred);
             return pick > 0 ? [pick, ...all.filter(i => i !== pick)] : all;
         }
 
-        // Index of the first reachable server. Retries forever unless `once` is set (then -1).
-        // `auto` ignores the picked server (used by "Find best server").
+        // first reachable index; retries forever unless once (-1); auto ignores pick
         async function findWispServer(once = false, auto = false) {
             if (!WISP_SERVERS.length) {
                 setStatus("error", "No wisp servers are configured (see paroxysm.config.js).");
@@ -220,8 +208,6 @@
             return initWithServer();
         };
 
-        // ── Settings API ───────────────────────────────────────────────────────
-        // settings.html (same origin) reads and drives the proxy through this object.
         async function checkConnection() {
             const srv = WISP_SERVERS[activeServerIdx];
             if (!srv) { showPill("warn", "No wisp server is configured.", 4000); return false; }
@@ -236,7 +222,6 @@
             }
         }
 
-        // Probe every endpoint at once and report each result.
         function testAll() {
             return Promise.all(WISP_SERVERS.map(async s => {
                 const t0 = performance.now();
@@ -249,11 +234,10 @@
             }));
         }
 
-        // Re-run the ordered search; switch only if a better (earlier) endpoint is available.
         async function findBestServer() {
             const idx = await findWispServer(true, true);
             if (idx === -1) { showPill("warn", "No wisp server responded.", 5000); return false; }
-            paroxysmSettings.set({ wispPreferred: "" });          // back to automatic
+            paroxysmSettings.set({ wispPreferred: "" }); // back to automatic
             if (idx === activeServerIdx && ready) {
                 showPill("ok", `Already on the best available server (${WISP_SERVERS[idx].name})`);
                 return true;
@@ -264,7 +248,7 @@
             return true;
         }
 
-        // Use a server the user picked. It is checked first, so a dead one never leaves you offline.
+        // probe first so a dead pick never leaves you offline
         async function selectServer(i) {
             const srv = WISP_SERVERS[i];
             if (!srv) return false;
@@ -286,7 +270,6 @@
             return true;
         }
 
-        // Servers the user adds (kept in settings; shown as "Custom Server N").
         function addCustomServer(input) {
             const url = String(input ?? "").trim();
             if (!/^wss?:\/\/\S+$/i.test(url)) return { ok: false, error: "That needs to start with wss:// (or ws://) and have no spaces." };
@@ -310,17 +293,16 @@
         }
 
         window.paroxysm = {
-            servers:     () => WISP_SERVERS.map(s => ({ id: s.id, name: s.name, custom: s.custom })),   // never the URLs
+            servers: () => WISP_SERVERS.map(s => ({ id: s.id, name: s.name, custom: s.custom })), // never expose URLs
             activeIndex: () => activeServerIdx,
-            isReady:     () => ready,
+            isReady: () => ready,
             checkConnection,
             testAll,
             findBestServer,
             selectServer,
             addCustomServer,
             removeCustomServer,
-            // fetch() through the wisp transport (end-to-end encrypted, no CORS limits). Used by the AI page's
-            // "send through the proxy" setting. Returns a normal Response whose body streams.
+            // fetch through wisp transport (used by AI page proxy setting)
             fetch: async (url, init = {}) => {
                 const transport = ready && scramjet?.transport;
                 if (!transport) throw new Error("The proxy isn't connected yet.");
@@ -332,13 +314,12 @@
                 return new Response(noBody ? null : res.body, { status: res.status, statusText: res.statusText, headers: new Headers(res.headers) });
             },
             about: () => ({
-                version:    window.PAROXYSM_CONFIG?.version ?? "dev",
-                scramjet:   self.$scramjet?.versionInfo?.version ?? "unknown",
+                version: window.PAROXYSM_CONFIG?.version ?? "dev",
+                scramjet: self.$scramjet?.versionInfo?.version ?? "unknown",
                 controller: self.$scramjetController?.versionInfo?.version ?? "unknown"
             })
         };
 
-        // ── Helpers ────────────────────────────────────────────────────────────
         function norm(u) {
             if (!u) return "https://example.com";
             return u.startsWith("http") ? u : "https://" + u;
@@ -364,9 +345,9 @@
             return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`;
         }
 
-        // Local pages (Settings, Games, ...) are real tabs: focus one if it is already open, otherwise open one.
+        // focus tab if open else open one
         function openLocal(url) {
-            const norm = u => (!u || u === "newtab") ? HOME_URL : u;     // a new tab is stored as "newtab" internally
+            const norm = u => (!u || u === "newtab") ? HOME_URL : u; // new tab is stored as "newtab"
             const existing = tabs.find(t => norm(t.url) === norm(url));
             if (existing) { switchTab(existing.id); return; }
             createTab();
@@ -374,7 +355,6 @@
         }
         const openPage = key => openLocal(LOCAL_SCHEME + key);
 
-        // Sidebar links, in the order chosen in Settings > Appearance > Sidebar.
         function renderRailLinks() {
             railLinks.replaceChildren(...paroxysmSettings.sidebarOrder().map(key => {
                 const r = LOCAL_ROUTES[key];
@@ -387,22 +367,19 @@
             }));
         }
 
-        // The proxied URL follows "<origin><controller prefix><id>/<frame id>/".
-        // The prefix comes from the controller's own config instead of being hard-coded.
+        // prefix comes from controller config
         function proxiedUrlPattern() {
             const prefix = $scramjetController.config?.prefix ?? "/~/sj/";
             const escaped = prefix.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
             return new RegExp("https?:\\/\\/[^/]+" + escaped + "[^/]+\\/[^/]+\\/(https?.+)");
         }
 
-        // Lucide icon for a page: home and settings have their own, everything else a globe.
-        // Used for the tab icon (until a site's favicon loads) and for the icon in the address bar.
         function routeKeyFor(url) {
             if (!url || url === "newtab") return "home";
             if (!url.startsWith(LOCAL_SCHEME)) return null;
             let page = url.slice(LOCAL_SCHEME.length).split(/[/?#]/)[0];
             if (page === "newtab") page = "home";
-            if (page === "ai") page = "assistant";      // the old name still works
+            if (page === "ai") page = "assistant"; // old address still works
             return LOCAL_ROUTES[page] ? page : null;
         }
 
@@ -413,7 +390,7 @@
 
         function syncOmnibox(tab) {
             urlIconUse.setAttribute("href", "#i-" + iconNameFor(tab?.url));
-            syncBookmarkBtn();     // tab.url has just changed
+            syncBookmarkBtn(); // url just changed
         }
 
         function setTabIcon(tab, name) {
@@ -426,18 +403,16 @@
             return tabs.find(t => t.id === activeTabId) ?? null;
         }
 
-        // ── Tab rendering ──────────────────────────────────────────────────────
         function renderTab(tab) {
             const el = document.createElement("div");
             el.className = "tab" + (tab.id === activeTabId ? " active" : "");
             el.dataset.id = tab.id;
 
-            // Two icon slots: a site favicon (img) or a Lucide icon (svg). Home and settings, and
-            // sites whose favicon lookup fails, show the Lucide icon; the paroxysm logo is never used.
+            // two icon slots: site favicon (img) or Lucide icon (svg)
             const favicon = document.createElement("img");
             favicon.className = "tab-favicon";
             favicon.alt = "";
-            favicon.onerror = () => setTabIcon(tab, "globe");   // lookup blocked or failed
+            favicon.onerror = () => setTabIcon(tab, "globe"); // lookup blocked or failed
 
             const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
             icon.setAttribute("class", "icon tab-icon");
@@ -467,7 +442,7 @@
             tab.tabEl = el;
             tab.faviconEl = favicon;
             tab.iconUse = iconUse;
-            tabBar.insertBefore(el, newTabBtn.parentNode === tabBar ? newTabBtn : null);   // the New tab button lives in the top bar in horizontal layout
+            tabBar.insertBefore(el, newTabBtn.parentNode === tabBar ? newTabBtn : null); // New tab button sits in top bar in horizontal layout
             setTabIcon(tab, iconNameFor(tab.url));
         }
 
@@ -488,14 +463,11 @@
             tabs.forEach(t => t.tabEl?.classList.toggle("active", t.id === activeTabId));
         }
 
-        // ── Tab lifecycle ──────────────────────────────────────────────────────
         const tabs = [];
         let activeTabId = null;
-        let nextTabId   = 0;
+        let nextTabId = 0;
 
-        // Frames start hidden and fade in once they have loaded; they hide again as soon as the page
-        // inside starts to unload (refresh, link click). That way the gap between two pages shows the
-        // paroxysm colour instead of the browser's white. Nothing here touches the proxy engine.
+        // frames start hidden and fade in on load; hide again on unload to avoid white flash
         function watchFrame(tab) {
             const f = tab.iframe;
             let safety = 0;
@@ -503,13 +475,13 @@
             const hide = () => {
                 f.classList.remove("shown");
                 clearTimeout(safety);
-                safety = setTimeout(show, 6000);          // never stay hidden if a load event is missed
+                safety = setTimeout(show, 6000); // never stay hidden if load is missed
             };
             f.addEventListener("load", () => {
-                if (tab.frame && unservedFrame(f.contentWindow) && retryUnserved(tab)) return;   // loaded while the service worker had no route
-                f.classList.toggle("web", !!tab.frame);   // proxied sites get a white canvas, local pages don't
+                if (tab.frame && unservedFrame(f.contentWindow) && retryUnserved(tab)) return; // loaded without service worker route
+                f.classList.toggle("web", !!tab.frame); // proxied sites get white canvas
                 try { f.contentWindow.addEventListener("pagehide", hide); } catch {}
-                try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {}   // panic key, character masking
+                try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {} // panic key and masking
                 show();
             });
         }
@@ -592,7 +564,6 @@
             if (activeTabId === id) switchTab(tabs[Math.min(idx, tabs.length - 1)].id);
         }
 
-        // ── Navigation ─────────────────────────────────────────────────────────
         function go(input) {
             const tab = getActiveTab();
             if (!tab) return;
@@ -602,7 +573,7 @@
                 if (!page) return;
                 const route = LOCAL_ROUTES[page];
                 const rest = input.slice(LOCAL_SCHEME.length);
-                const query = rest.includes("?") ? rest.slice(rest.indexOf("?")).split("#")[0] : "";   // e.g. ?g=game-id
+                const query = rest.includes("?") ? rest.slice(rest.indexOf("?")).split("#")[0] : ""; // e.g. ?g=game-id
                 clearInterval(tab._pollInterval);
                 tab._pollInterval = null;
                 tab.frame = null;
@@ -634,16 +605,16 @@
         }
 
         urlInput.addEventListener("keydown", e => { if (e.key === "Enter") go(urlInput.value); });
-        document.getElementById("backBtn").onclick    = () => getActiveTab()?.iframe?.contentWindow?.history.back();
+        document.getElementById("backBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.back();
         document.getElementById("forwardBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.history.forward();
-        document.getElementById("reloadBtn").onclick  = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
+        document.getElementById("reloadBtn").onclick = () => getActiveTab()?.iframe?.contentWindow?.location.reload();
         newTabBtn.onclick = () => createTab();
 
         renderRailLinks();
         paroxysmCloak.init();
         paroxysmSettings.onChange(() => { renderRailLinks(); rebuildServers(); syncBrand(); renderMarks(); });
 
-        // sidebar: collapse to icons (remembered)
+        // sidebar collapse (remembered)
         const RAIL_KEY = "paroxysm:rail-collapsed";
         function setRailCollapsed(on) {
             document.body.classList.toggle("rail-collapsed", on);
@@ -653,7 +624,7 @@
         document.getElementById("railToggle").addEventListener("click",
             () => setRailCollapsed(!document.body.classList.contains("rail-collapsed")));
 
-        // sidebar: drag the handle to resize (double-click resets), width is remembered
+        // sidebar resize (double-click resets; remembered)
         const RAIL_W_KEY = "paroxysm:rail-width", RAIL_W_MIN = 160, RAIL_W_MAX = 360;
         function setRailWidth(px, save = true) {
             if (px == null) document.body.style.removeProperty("--rail-w");
@@ -666,7 +637,7 @@
         let resizing = false, lastDown = 0;
         resizer.addEventListener("pointerdown", e => {
             const now = performance.now();
-            if (now - lastDown < 350) { lastDown = 0; setRailWidth(null); return; }   // quick second press = reset
+            if (now - lastDown < 350) { lastDown = 0; setRailWidth(null); return; } // quick second press resets
             lastDown = now;
             resizing = true;
             resizer.setPointerCapture(e.pointerId);
@@ -683,12 +654,11 @@
         resizer.addEventListener("pointerup", endResize);
         resizer.addEventListener("pointercancel", endResize);
 
-        // ── Layout: horizontal tabs (default) or the sidebar ───────────────────
-        const LAYOUT_KEY   = "paroxysm:layout";
-        const tabStrip     = document.getElementById("tabStrip");
+        const LAYOUT_KEY = "paroxysm:layout";
+        const tabStrip = document.getElementById("tabStrip");
         const toolbarRight = document.querySelector(".toolbar-right");
-        const railEl       = document.querySelector(".rail");
-        const layoutBtn    = document.getElementById("layoutBtn");
+        const railEl = document.querySelector(".rail");
+        const layoutBtn = document.getElementById("layoutBtn");
 
         function setLayout(mode, save = true) {
             const horizontal = mode !== "v";
@@ -704,7 +674,7 @@
         layoutBtn.addEventListener("click", () => setLayout(document.body.classList.contains("layout-h") ? "v" : "h"));
         try { setLayout(localStorage.getItem(LAYOUT_KEY) === "v" ? "v" : "h", false); } catch { setLayout("h", false); }
 
-        // The paroxysm icon at the top left follows the theme (dark-mode or light-mode file).
+        // brand icon follows theme
         const brandImg = document.getElementById("brandImg");
         function syncBrand() {
             brandImg.src = `assets/paroxysm/paroxysm_${paroxysmSettings.get().theme === "light" ? "lightmode" : "darkmode"}_icon.png`;
@@ -712,11 +682,8 @@
         syncBrand();
         document.getElementById("brandBtn").addEventListener("click", () => openPage("home"));
 
-        // ── Omnibox: cosmetic colouring of the address ─────────────────────────
-        // The input always holds the full, real address; Scramjet and everything else read that.
-        // While the field is not being edited, a coloured copy is shown on top: no https://, the domain
-        // bright and the path, query and hash gray. Focusing the field shows the real text again.
-        const urlField   = document.getElementById("urlField");
+        // input holds real address; coloured copy shows while not editing
+        const urlField = document.getElementById("urlField");
         const urlDisplay = document.getElementById("urlDisplay");
         function renderUrlDisplay() {
             urlDisplay.replaceChildren();
@@ -734,7 +701,7 @@
             if (rest) urlDisplay.append(document.createTextNode(rest));
             urlField.classList.add("styled");
         }
-        // Code elsewhere sets urlInput.value directly (including the protected frame code); catch every change.
+        // catch every direct set of urlInput.value
         const valueDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
         Object.defineProperty(urlInput, "value", {
             configurable: true,
@@ -744,7 +711,6 @@
         urlInput.addEventListener("focus", () => { renderUrlDisplay(); urlInput.select(); });
         urlInput.addEventListener("blur", renderUrlDisplay);
 
-        // ── Small helpers: a context menu and a form dialog ────────────────────
         let ctxEl = null;
         function closeCtx() { ctxEl?.remove(); ctxEl = null; }
         function showCtx(x, y, items) {
@@ -764,7 +730,7 @@
         addEventListener("pointerdown", e => { if (ctxEl && !ctxEl.contains(e.target)) closeCtx(); }, true);
         addEventListener("keydown", e => { if (e.key === "Escape") closeCtx(); });
 
-        // Returns the typed value, or null if cancelled.
+        // resolves to typed value or null on cancel
         function askText(title, label, value) {
             return new Promise(resolve => {
                 const back = document.createElement("div");
@@ -788,15 +754,14 @@
             });
         }
 
-        // ── Bookmarks ──────────────────────────────────────────────────────────
-        const MARKS_KEY    = "paroxysm:bookmarks";
-        const marksBar     = document.getElementById("marksBar");
-        const bookmarkBtn  = document.getElementById("bookmarkBtn");
+        const MARKS_KEY = "paroxysm:bookmarks";
+        const marksBar = document.getElementById("marksBar");
+        const bookmarkBtn = document.getElementById("bookmarkBtn");
         const readMarks = () => { try { const a = JSON.parse(localStorage.getItem(MARKS_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } };
         function writeMarks(list) { try { localStorage.setItem(MARKS_KEY, JSON.stringify(list)); } catch {} renderMarks(); syncBookmarkBtn(); }
         const normUrl = u => { try { return new URL(u).href; } catch { return String(u); } };
 
-        // The address of the page in the active tab ("" for Home, which is not bookmarked).
+        // "" for Home (not bookmarked)
         function currentPageUrl() {
             const t = getActiveTab();
             const v = urlInput.value.trim();
@@ -876,9 +841,6 @@
         syncBookmarkBtn();
         addEventListener("storage", e => { if (e.key === MARKS_KEY) { renderMarks(); syncBookmarkBtn(); } });
 
-        // ── Menu ───────────────────────────────────────────────────────────────
-        // The top-bar menu button. Groups are separated by lines: pages, connection, quick toggles,
-        // cloaking, clear data, about.
         const menuBtn = document.getElementById("menuBtn");
         let menuEl = null, menuToken = 0;
 
@@ -898,8 +860,8 @@
             menuEl = null;
             menuBtn.classList.remove("open");
             if (!el) return;
-            if (getComputedStyle(el).animationName === "none") { el.remove(); return; }     // reduced motion
-            el.classList.add("closing");                                                    // fade out, then remove
+            if (getComputedStyle(el).animationName === "none") { el.remove(); return; } // reduced motion
+            el.classList.add("closing"); // fade out then remove
             el.addEventListener("animationend", e => { if (e.target === el) el.remove(); });
             setTimeout(() => el.remove(), 400);
         }
@@ -957,8 +919,8 @@
                     t.iframe.removeEventListener("load", show);
                 } catch {}
             };
-            t.iframe.addEventListener("load", show);     // a newly opened Settings tab: wait until it has loaded
-            show();                                      // an already open one
+            t.iframe.addEventListener("load", show); // new Settings tab: wait for load
+            show(); // already open
         }
 
         function menuGroups() {
@@ -973,30 +935,30 @@
             const clear = (title, text, ok, run) => async () => { if (await confirmBox(title, text, ok)) run(); };
 
             return [
-                [   // 1. paroxysm pages
+                [ // pages
                     { icon: "plus", label: "New tab", run: () => createTab() },
                     { icon: "gamepad-2", label: "Games", run: () => openPage("games") },
                     { icon: "sparkles", label: "AI", run: () => openPage("assistant") },
                     { icon: "settings", label: "Settings", run: () => openPage("settings") }
                 ],
-                [   // 2. connection
+                [ // connection
                     { info: "conn" },
                     { icon: "refresh-cw", label: "Reconnect", disabled: !ready, run: reconnectNow },
                     { icon: "zap", label: "Find best server", run: () => window.paroxysm.findBestServer() }
                 ],
-                [   // 3. quick toggles
+                [ // toggles
                     { icon: light ? "moon" : "sun", label: light ? "Switch to dark theme" : "Switch to light theme", run: () => paroxysmSettings.set({ theme: light ? "dark" : "light" }) },
                     { icon: "bookmark", label: !marks ? "Bookmarks bar" : s.bookmarksBar === false ? "Show bookmarks bar" : "Hide bookmarks bar", hint: marks ? "" : "No bookmarks", disabled: !marks, run: () => paroxysmSettings.set({ bookmarksBar: s.bookmarksBar === false }) },
                     { icon: horizontal ? "panel-left" : "panel-top", label: horizontal ? "Use sidebar tabs" : "Use horizontal tabs", run: () => setLayout(horizontal ? "v" : "h") }
                 ],
-                [   // 4. cloaking
+                [ // cloaking
                     { icon: "eye-off", label: "Tab disguise", hint: disguiseOn ? "On, " + (cloakLabel(s.tabCloak) ?? "") : "Off",
                       run: () => paroxysmSettings.set(disguiseOn
                           ? { tabCloak: "off", tabCloakLast: s.tabCloak }
                           : { tabCloak: paroxysmSettings.cloaks.some(c => c.id === s.tabCloakLast && c.id !== "off") ? s.tabCloakLast : "docs" }) },
                     { icon: "siren", label: "Panic now", hint: s.panicKey ? "Key: " + s.panicKey : "", disabled: !paroxysmSettings.panicUrl(), run: () => paroxysmCloak.panic() }
                 ],
-                [   // 5. clear data
+                [ // clear data
                     { icon: "trash-2", label: "Clear bookmarks", danger: true, disabled: !marks,
                       run: clear("Clear bookmarks?", "All your bookmarks will be removed. This can't be undone.", "Clear", () => writeMarks([])) },
                     { icon: "trash-2", label: "Clear game saves", danger: true, disabled: !hasSaves,
@@ -1004,14 +966,14 @@
                     { icon: "trash-2", label: "Clear proxy cookies", danger: true, disabled: !ready,
                       run: clear("Clear proxy cookies?", "You will be signed out of the websites you visited through paroxysm.", "Clear", clearProxyCookies) }
                 ],
-                [   // 6. about
+                [ // about
                     { icon: "info", label: "About paroxysm", hint: "v" + about.version, run: openAbout },
                     { info: "about", text: `Scramjet ${about.scramjet}, controller ${about.controller}` }
                 ]
             ];
         }
 
-        // Status line of the connection group. Only the wisp server's reachability is probed, not the transport itself.
+        // probes server reachability only (not transport)
         async function fillConnection(row, token) {
             const dot = row.querySelector(".dot"), text = row.querySelector("span");
             const set = (kind, msg) => { if (token === menuToken) { dot.className = "dot " + kind; text.textContent = msg; } };
@@ -1063,7 +1025,7 @@
                     menuEl.append(b);
                 });
             });
-            [...menuEl.children].forEach((c, i) => c.style.setProperty("--i", i));     // stagger of the opening animation
+            [...menuEl.children].forEach((c, i) => c.style.setProperty("--i", i)); // stagger for open animation
             document.body.append(menuEl);
             const r = menuBtn.getBoundingClientRect();
             menuEl.style.left = Math.max(8, Math.min(r.right - menuEl.offsetWidth, innerWidth - menuEl.offsetWidth - 8)) + "px";
@@ -1073,7 +1035,7 @@
 
         menuBtn.addEventListener("click", () => menuEl ? closeMenu() : openMenu());
         addEventListener("pointerdown", e => { if (menuEl && !menuEl.contains(e.target) && !menuBtn.contains(e.target)) closeMenu(); }, true);
-        addEventListener("blur", () => { if (menuEl) closeMenu(); });       // a click inside a page frame moves focus away
+        addEventListener("blur", () => { if (menuEl) closeMenu(); }); // click inside page frame moves focus away
         addEventListener("resize", () => { if (menuEl) closeMenu(); });
         addEventListener("keydown", e => {
             if (!menuEl) return;
@@ -1086,8 +1048,7 @@
             items[(at + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length].focus();
         });
 
-        // One-time cleanup of the removed extension runtime (Sapphire, tried and removed 2026-11-19): its
-        // stored extension files can be large. Safe to delete this block once nobody has the old version.
+        // one-time cleanup of removed Sapphire storage
         try {
             if (!localStorage.getItem("paroxysm:sapphire-cleaned")) {
                 localStorage.setItem("paroxysm:sapphire-cleaned", "1");
@@ -1096,27 +1057,22 @@
             }
         } catch {}
 
-        // ── New tab page messages ──────────────────────────────────────────────
         window.addEventListener("message", e => {
             if (e.data?.type === "newtab-navigate") go(e.data.url);
 
-            // Messages from local pages (Games, ...). Only same-origin frames that are not proxied sites.
+            // messages from local same-origin pages only
             const tab = tabs.find(t => t.iframe.contentWindow === e.source);
             if (!tab || tab.frame || e.origin !== location.origin) return;
-            if (e.data?.type === "paroxysm-open" && typeof e.data.url === "string" && e.data.url.startsWith(LOCAL_SCHEME)) openLocal(e.data.url);   // open or focus a local page
-            if (e.data?.type === "paroxysm-title" && typeof e.data.title === "string") updateTabTitle(tab, e.data.title.slice(0, 80));            // name this tab
-            if (e.data?.type === "paroxysm-open-url" && /^https?:\/\//i.test(e.data.url ?? "")) { createTab(); go(e.data.url); }                    // a link from a local page, opened in a new proxied tab
+            if (e.data?.type === "paroxysm-open" && typeof e.data.url === "string" && e.data.url.startsWith(LOCAL_SCHEME)) openLocal(e.data.url); // open or focus
+            if (e.data?.type === "paroxysm-title" && typeof e.data.title === "string") updateTabTitle(tab, e.data.title.slice(0, 80)); // name this tab
+            if (e.data?.type === "paroxysm-open-url" && /^https?:\/\//i.test(e.data.url ?? "")) { createTab(); go(e.data.url); } // open link in new proxied tab
         });
 
-        // ── Service worker restarts ────────────────────────────────────────────
-        // The browser stops an idle (or DevTools-stopped) worker. The restarted worker knows no tabs until the
-        // controller sends its port again, which it does when the worker announces itself ($controller$swrevive).
-        // Two gaps are closed here, from outside the controller: the controller ignores that announcement during
-        // its first 5 s after start-up, and the request that woke the worker can't be routed yet, so its page
-        // loads as the static server's 404. Pages that loaded like that are reloaded (twice at most).
+        // restarted worker has no routes until controller re-sends its port
+        // frames that loaded as static 404 get reloaded (twice max)
         let lastRevive = -1e9;
         const recentlyRevived = () => performance.now() - lastRevive < 20000;
-        const servedByProxy = win => { try { return typeof win.$scramjet !== "undefined"; } catch { return true; } };   // only proxied pages get $scramjet injected
+        const servedByProxy = win => { try { return typeof win.$scramjet !== "undefined"; } catch { return true; } }; // only proxied pages get $scramjet
 
         function reloadUnservedFrames() {
             tabs.forEach(t => {
@@ -1127,17 +1083,15 @@
             });
         }
 
-        // A proxied frame whose document came from the static server instead of the worker: no $scramjet, and an HTML
-        // page (or any page right after a revive). Used whether or not a revive message ever arrived (B16).
+        // proxied frame served by static server instead of worker (no $scramjet)
         const unservedFrame = win => {
             try {
-                if (servedByProxy(win) || !proxiedUrlPattern().test(win.location.href)) return false;   // local pages (Home, about:blank) are never "unserved"
+                if (servedByProxy(win) || !proxiedUrlPattern().test(win.location.href)) return false; // local pages are never unserved
                 return recentlyRevived() || win.document.contentType === "text/html";
             } catch { return false; }
         };
 
-        // Give the frame's own controller a fresh port to the worker (this also wakes a stopped worker), then reload the
-        // frame. At most two tries per 20 s per tab. Returns true when a reload was started.
+        // give frame controller a fresh port (wakes worker) then reload; 2 tries per 20 s per tab
         function retryUnserved(tab) {
             const now = performance.now();
             if (now - (tab.reviveSince ?? -1e9) > 20000) { tab.reviveSince = now; tab.reviveRetries = 0; }
@@ -1156,9 +1110,7 @@
             setTimeout(reloadUnservedFrames, 1500);
         });
 
-        // A page the worker does not control (a hard reload, Ctrl+Shift+R, leaves it that way) never receives the
-        // worker's revive announcement or cookie updates, so a restarted worker stays without routes. A normal reload
-        // cures it. Reload once; if the page is still uncontrolled (for example "Bypass for network" is ticked), say so.
+        // uncontrolled page (hard reload) misses worker announcements; reload once
         (async () => {
             const sw = navigator.serviceWorker, KEY = "paroxysm:uncontrolled-reload";
             if (!sw) return;
@@ -1171,7 +1123,6 @@
             showPill("warn", "paroxysm isn't controlled by its service worker. If DevTools \"Bypass for network\" is on, turn it off and reload.", 10000);
         })();
 
-        // ── Init ───────────────────────────────────────────────────────────────
         function probeWisp(url) {
             return new Promise((resolve, reject) => {
                 let ws;
@@ -1262,7 +1213,6 @@
             }
         }
 
-        // ── Bootstrap ──────────────────────────────────────────────────────────
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("/sw.js").then(() => {
                 createTab();

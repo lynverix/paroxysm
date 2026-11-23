@@ -1,14 +1,5 @@
-// paroxysm: the engine behind the AI page (assistant.html). The page only draws things; everything that talks to a
-// provider, counts usage, stores chats or turns markdown into HTML lives here, as window.paroxysmAI.
-//
-// Where an answer comes from (resolve):
-//   1. the person's own key, if they pasted one (Gemini or DeepSeek)
-//   2. the shared key from paroxysm.config.js (aiKey), Gemma 4 only
-//   3. Quick: Pollinations' keyless GPT-OSS 20B (text only, always sent through the proxy)
-// If the shared key stops working (quota, blocked), run() answers with Quick instead and says so.
-// Requests go straight from the browser to the provider, or through the wisp transport when "send through the
-// proxy" is on (window.parent.paroxysm.fetch, see index.html).
-// Written for paroxysm, no libraries. Provider request shapes follow the providers' public documentation.
+// AI engine for assistant.html (window.paroxysmAI)
+// answer source order: own key then shared key then Quick (Puter only when picked)
 (() => {
     "use strict";
 
@@ -17,42 +8,40 @@
     const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v && typeof v === "object" ? { ...d, ...v } : { ...d }; } catch { return { ...d }; } };
     const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
-    // ── settings, keys ─────────────────────────────────────────────────────
     const DEFAULTS = { cap: 30, viaProxy: false, model: "", instructions: "" };
     const settings = { get: () => read(LS.settings, DEFAULTS), set: p => write(LS.settings, { ...settings.get(), ...p }) };
     const keys = { get: () => read(LS.keys, { gemini: "", deepseek: "" }), set: p => write(LS.keys, { ...keys.get(), ...p }) };
 
     const PROVIDERS = {
-        gemini:   { label: "Google Gemini", keyUrl: "https://aistudio.google.com/apikey", base: "https://generativelanguage.googleapis.com" },
+        gemini: { label: "Google Gemini", keyUrl: "https://aistudio.google.com/apikey", base: "https://generativelanguage.googleapis.com" },
         deepseek: { label: "DeepSeek", keyUrl: "https://platform.deepseek.com/api_keys", base: "https://api.deepseek.com" },
-        puter:    { label: "Puter" },
-        quick:    { label: "Quick", base: "https://text.pollinations.ai" }
+        puter: { label: "Puter" },
+        quick: { label: "Quick", base: "https://text.pollinations.ai" }
     };
-    // Test hook: localStorage "paroxysm:ai-dev" = {"gemini":"http://localhost:5555", ...} points a provider somewhere else.
+    // test hook: localStorage "paroxysm:ai-dev" points a provider elsewhere
     const baseOf = p => String(read(LS.dev, {})[p] || PROVIDERS[p].base).replace(/\/$/, "");
 
-    // shared: may use the shared key (its free quota is large enough for everyone). thinks: returns a thinking summary.
+    // shared: may use shared key. thinks: returns thinking summary
     const MODELS = [
-        { id: "gemma-4-31b-it",        provider: "gemini",   name: "Gemma 4 31B",           note: "Free and fast, sees images",           vision: true,  shared: true },
-        { id: "gemini-3.5-flash-lite", provider: "gemini",   name: "Gemini 3.5 Flash-Lite", note: "Quick answers, sees images",           vision: true,  thinks: true },
-        { id: "gemini-3.8-flash",      provider: "gemini",   name: "Gemini 3.8 Flash",      note: "Best answers, sees images",            vision: true,  thinks: true },
-        { id: "deepseek-flash",        provider: "deepseek", name: "DeepSeek V4.1 Flash",   note: "Thinks before answering, sees images", vision: true,  thinks: true },
-        // Via Puter (sign in with a Puter account, no key). id is ours; puter is the model id Puter knows. Quick stays last.
+        { id: "gemma-4-31b-it", provider: "gemini", name: "Gemma 4 31B", note: "Free and fast, sees images", vision: true, shared: true },
+        { id: "gemini-3.5-flash-lite", provider: "gemini", name: "Gemini 3.5 Flash-Lite", note: "Quick answers, sees images", vision: true, thinks: true },
+        { id: "gemini-3.8-flash", provider: "gemini", name: "Gemini 3.8 Flash", note: "Best answers, sees images", vision: true, thinks: true },
+        { id: "deepseek-flash", provider: "deepseek", name: "DeepSeek V4.1 Flash", note: "Thinks before answering, sees images", vision: true, thinks: true },
+        // via Puter: id is ours; puter is Puter's model id
         { id: "puter:gemma-4-31b-it", puter: "gemma-4-31b-it", provider: "puter", name: "Gemma 4 31B (Puter)", note: "Open model, sees images", vision: true },
         { id: "puter:gpt-5.4-nano", puter: "gpt-5.4-nano", provider: "puter", name: "GPT-5.4 nano (Puter)", note: "Fast, sees images", vision: true },
         { id: "puter:deepseek-v4.1-flash", puter: "deepseek-v4.1-flash", provider: "puter", name: "DeepSeek V4.1 Flash (Puter)", note: "Thinks, sees images", vision: true },
         { id: "puter:gemini-3.8-flash", puter: "gemini-3.8-flash", provider: "puter", name: "Gemini 3.8 Flash (Puter)", note: "Sees images", vision: true },
         { id: "puter:gpt-5.5", puter: "gpt-5.5", provider: "puter", name: "GPT-5.5 (Puter)", note: "Most capable, sees images", vision: true },
-        { id: "openai-fast",           provider: "quick",    name: "Quick (GPT-OSS 20B)",   note: "No key needed, text only",             vision: false, thinks: true }
+        { id: "openai-fast", provider: "quick", name: "Quick (GPT-OSS 20B)", note: "No key needed, text only", vision: false, thinks: true }
     ];
     const modelById = id => MODELS.find(m => m.id === id);
 
-    // ── where the key comes from ───────────────────────────────────────────
     const SHARED_DOWN = "paroxysm:ai-shared-down";
     const sharedDown = () => { try { return Date.now() - Number(sessionStorage.getItem(SHARED_DOWN) || 0) < 3600e3; } catch { return false; } };
     const markSharedDown = () => { try { sessionStorage.setItem(SHARED_DOWN, String(Date.now())); } catch {} };
 
-    // { kind: "own" | "shared" | "quick", key } or null when the model needs a key the person doesn't have
+    // { kind: "own" | "shared" | "quick", key } or null when key is missing
     function resolve(model) {
         if (model.provider === "quick") return { kind: "quick", key: "" };
         if (model.provider === "puter") { const t = puterAuth.token(); return t ? { kind: "puter", key: t } : null; }
@@ -68,7 +57,7 @@
         return (MODELS.find(m => resolve(m)) ?? MODELS.at(-1)).id;
     }
 
-    // ── usage: a local counter that resets when Gemini's own daily quota does (midnight, Pacific time) ──
+    // usage: local counter that resets with Gemini's daily quota (midnight Pacific)
     const dayKey = t => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles" }).format(t);
     function nextReset(now = Date.now()) {
         const k = dayKey(now);
@@ -91,8 +80,7 @@
     };
     const capLeft = () => Math.max(0, settings.get().cap - usage.get().capped);
 
-    // ── errors ─────────────────────────────────────────────────────────────
-    // kind: quota, key, balance, cap, blocked, network, server, bad
+    // error kinds: quota key balance cap blocked network server bad
     class AIError extends Error { constructor(kind, message, status) { super(message); this.kind = kind; this.status = status; } }
     function httpError(status, text) {
         let msg = text;
@@ -104,7 +92,6 @@
         return new AIError(status >= 500 ? "server" : "bad", msg, status);
     }
 
-    // ── talking to a provider ──────────────────────────────────────────────
     async function post(url, headers, body, { viaProxy, signal }) {
         const init = { method: "POST", headers, body: JSON.stringify(body), signal };
         let res;
@@ -125,7 +112,7 @@
         return res;
     }
 
-    // Server-sent events: yields the data of each event.
+    // SSE: yields data of each event
     async function* sse(res, signal) {
         const reader = res.body.getReader();
         const onAbort = () => { try { reader.cancel(); } catch {} };
@@ -153,7 +140,7 @@
         }
     }
 
-    // The conversation the provider sees: only recent turns, images only from the latest few.
+    // recent turns only; images only from latest few
     function historyOf(messages) {
         const clean = messages.filter(m => (m.role === "user" || m.content) && !m.error);
         const recent = clean.slice(-24);
@@ -185,7 +172,7 @@
             });
             const body = { contents };
             if (system) {
-                if (gemma || minimal) contents[0].parts[0].text = system + "\n\n" + contents[0].parts[0].text;   // some models take no system instruction
+                if (gemma || minimal) contents[0].parts[0].text = system + "\n\n" + contents[0].parts[0].text; // some models take no system instruction
                 else body.systemInstruction = { parts: [{ text: system }] };
             }
             if (model.thinks && !gemma && !minimal) body.generationConfig = { thinkingConfig: { includeThoughts: true } };
@@ -219,7 +206,7 @@
         if (finish && !got) throw new AIError("blocked", "The answer was stopped (" + finish + ").");
     }
 
-    // DeepSeek and Quick both speak the OpenAI chat format.
+    // DeepSeek and Quick use OpenAI chat format
     async function openaiCall(ctx, url, headers) {
         const { model, history, system, on } = ctx;
         const messages = [];
@@ -233,7 +220,7 @@
         }
         const res = await post(url, headers, { model: model.id, messages, stream: true }, ctx);
         on.started();
-        if ((res.headers.get("content-type") || "").includes("application/json")) {      // a server that ignores stream:true
+        if ((res.headers.get("content-type") || "").includes("application/json")) { // server ignored stream:true
             const j = await res.json();
             const msg = j.choices?.[0]?.message ?? {};
             const r = msg.reasoning_content ?? msg.reasoning;
@@ -260,12 +247,7 @@
         puter: ctx => puterCall(ctx)
     };
 
-    // ── Puter ──────────────────────────────────────────────────────────────
-    // The person signs in to their own Puter account (no key; Puter bills the account's monthly allowance). Sign-in runs
-    // here, in Puter's popup. Puter.js itself runs in puter-frame.html, an iframe sandboxed without allow-same-origin, so
-    // it can't touch paroxysm's storage; it is only created when Puter is first needed. With "Send AI requests through the proxy"
-    // on, its API calls go through the wisp transport (puterForward); the sign-in window itself is always direct. The token is kept in localStorage
-    // (paroxysm:ai-puter) like the AI keys. Test hooks: paroxysm:ai-dev { puterFrame, puterGui }.
+    // Puter sign-in runs here (popup); Puter.js runs sandboxed in puter-frame.html
     const puterAuth = {
         get: () => read(LS.puter, { token: "", user: "" }),
         token: () => String(puterAuth.get().token || ""),
@@ -275,9 +257,9 @@
 
     let puterF = null, puterSeq = 0;
     const puterWaiters = new Map(), puterXhrs = new Map();
-    const puterProxy = () => !!settings.get().viaProxy;    // "Send AI requests through the proxy" also covers Puter (not its sign-in window)
+    const puterProxy = () => !!settings.get().viaProxy; // also covers Puter (not sign-in window)
 
-    // The frame's XMLHttpRequest, forwarded through the wisp transport: only https puter.com hosts, only while the setting is on.
+    // frame XHR forwarded through wisp transport; https puter.com hosts only; only while setting is on
     async function puterForward(el, m) {
         const reply = (r, transfer = []) => { try { el.contentWindow.postMessage({ ...r, fid: m.fid }, "*", transfer); } catch {} };
         const ctrl = new AbortController();
@@ -346,7 +328,7 @@
         return e;
     }
 
-    // Sends one request to the frame; `on(message)` sees every reply with this id; resolves on "done"/"answer", rejects on "error".
+    // sends request to frame; on() sees replies with this id; resolves on done/answer; rejects on error
     async function puterAsk(msg, { signal, on } = {}) {
         const el = await puterFrame();
         const id = "p" + (++puterSeq);
@@ -381,8 +363,7 @@
         } });
     }
 
-    // Opens Puter's sign-in window and resolves with the token it sends back. Call it straight from a click (no await first),
-    // or the browser blocks the window. Only a message from that window, from Puter's own origin, with our id, is accepted.
+    // opens Puter sign-in popup; call straight from a click or browser blocks it
     function puterPopup() {
         const id = crypto.randomUUID(), gui = puterCfg().gui;
         const w = 600, h = 700;
@@ -406,7 +387,7 @@
     const puter = {
         signedIn: () => !!puterAuth.token(),
         user: () => String(puterAuth.get().user || ""),
-        // sign in, then check the token with Puter (and remember who it is); a token Puter won't accept is dropped
+        // sign in then verify token with Puter; invalid token is dropped
         async connect() {
             const token = await puterPopup();
             puterAuth.set({ token, user: "" });
@@ -425,7 +406,7 @@
         account: () => puterAsk({ t: "account" }),
         disconnect() {
             write(LS.puter, { token: "", user: "" });
-            if (puterF) { puterF.el.remove(); puterF = null; }     // the frame goes away with the token it held
+            if (puterF) { puterF.el.remove(); puterF = null; } // frame goes away with token
         }
     };
 
@@ -435,7 +416,7 @@
         return extra ? SYSTEM + "\n\nThe user's own instructions:\n" + extra.slice(0, 1500) : SYSTEM;
     };
 
-    // One request. Counts it once the provider has accepted it.
+    // counts only once provider accepted
     async function attempt(model, source, opts) {
         const history = historyOf(opts.messages);
         const last = opts.messages.at(-1);
@@ -447,7 +428,7 @@
             thought: s => { thought += s; opts.onThought?.(thought); },
             text: s => { if (!text) firstText = performance.now(); text += s; opts.onText?.(text); }
         };
-        // Quick always goes through the proxy: Pollinations refuses direct browser requests ("Missing Turnstile token")
+        // Quick always uses proxy: Pollinations refuses direct requests ("Missing Turnstile token")
         const viaProxy = settings.get().viaProxy || model.provider === "quick";
         try {
             await callers[model.provider]({ model, key: source.key, history, system: systemPrompt(), viaProxy, signal: opts.signal, on });
@@ -460,7 +441,7 @@
         return { text, thought, thoughtMs: thought ? Math.round((firstText || performance.now()) - t0) : 0, model, kind: source.kind };
     }
 
-    // The public entry: picks the source, applies the daily cap, falls back from the shared key to Quick.
+    // public entry: picks source; applies daily cap; falls back to Quick
     async function run(opts) {
         const model = modelById(opts.modelId) ?? MODELS.at(-1);
         const source = resolve(model);
@@ -480,14 +461,13 @@
         }
     }
 
-    // For the key dialog: a tiny request that is not counted.
+    // key dialog test: uncounted
     async function test(provider, key) {
         const model = MODELS.find(m => m.provider === provider);
         const r = await attempt(model, { kind: "own", key }, { messages: [{ role: "user", content: "Reply with the single word OK." }], dry: true });
         return r.text.trim().slice(0, 40);
     }
 
-    // ── images ─────────────────────────────────────────────────────────────
     async function prepareImage(file) {
         if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) throw new Error("That file isn't a supported image (PNG, JPEG, WebP or GIF).");
         const bmp = await createImageBitmap(file);
@@ -510,7 +490,7 @@
         return { mime: "image/jpeg", data, w, h };
     }
 
-    // ── chat storage (IndexedDB: chats can hold images, which are too big for localStorage) ──
+    // chats in IndexedDB (images too big for localStorage)
     let dbp = null;
     const idb = () => dbp ??= new Promise((resolve, reject) => {
         const r = indexedDB.open("paroxysm-ai", 1);
@@ -532,7 +512,7 @@
         get: id => tx("readonly", s => s.get(id)),
         delete: id => tx("readwrite", s => s.delete(id)),
         clear: () => tx("readwrite", s => s.clear()),
-        // one light entry per chat (no images), with the text lower-cased for searching
+        // light entry per chat (no images); text lowercased for search
         async index() {
             const db = await idb();
             return new Promise((resolve, reject) => {
@@ -557,14 +537,11 @@
         return cut.charAt(0).toUpperCase() + cut.slice(1);
     };
 
-    // ── markdown → HTML (everything is escaped; only our own tags come out) ──
+    // markdown to HTML (all escaped; only own tags come out)
     const ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
     const esc = s => String(s).replace(/[&<>"']/g, c => ESC[c]);
 
-    // ── LaTeX → MathML ─────────────────────────────────────────────────────
-    // Models write equations as LaTeX (\[ ... \], \( ... \), $$ ... $$, $ ... $). We turn the common subset into
-    // MathML, which Chrome lays out natively (fractions, roots, sub- and superscripts, matrices). Anything we
-    // don't understand is shown as its own \command, so nothing is lost. Written for paroxysm, no libraries.
+    // LaTeX to MathML for common subset; unknown commands show as themselves
     const GREEK = { alpha: "α", beta: "β", gamma: "γ", delta: "δ", epsilon: "ϵ", varepsilon: "ε", zeta: "ζ", eta: "η", theta: "θ", vartheta: "ϑ", iota: "ι", kappa: "κ", lambda: "λ", mu: "μ", nu: "ν", xi: "ξ", pi: "π", varpi: "ϖ", rho: "ρ", varrho: "ϱ", sigma: "σ", varsigma: "ς", tau: "τ", upsilon: "υ", phi: "ϕ", varphi: "φ", chi: "χ", psi: "ψ", omega: "ω", Gamma: "Γ", Delta: "Δ", Theta: "Θ", Lambda: "Λ", Xi: "Ξ", Pi: "Π", Sigma: "Σ", Upsilon: "Υ", Phi: "Φ", Psi: "Ψ", Omega: "Ω" };
     const OPS = { times: "×", cdot: "⋅", div: "÷", pm: "±", mp: "∓", ast: "∗", star: "⋆", circ: "∘", bullet: "•", oplus: "⊕", otimes: "⊗", leq: "≤", le: "≤", geq: "≥", ge: "≥", neq: "≠", ne: "≠", approx: "≈", equiv: "≡", sim: "∼", simeq: "≃", cong: "≅", propto: "∝", ll: "≪", gg: "≫", perp: "⊥", parallel: "∥", mid: "∣", in: "∈", notin: "∉", ni: "∋", subset: "⊂", supset: "⊃", subseteq: "⊆", supseteq: "⊇", cup: "∪", cap: "∩", setminus: "∖", land: "∧", wedge: "∧", lor: "∨", vee: "∨", to: "→", rightarrow: "→", leftarrow: "←", gets: "←", leftrightarrow: "↔", Rightarrow: "⇒", Leftarrow: "⇐", Leftrightarrow: "⇔", longrightarrow: "⟶", longleftarrow: "⟵", longleftrightarrow: "⟷", Longrightarrow: "⟹", Longleftarrow: "⟸", Longleftrightarrow: "⟺", implies: "⟹", impliedby: "⟸", iff: "⟺", mapsto: "↦", longmapsto: "⟼", rightleftharpoons: "⇌", leftrightharpoons: "⇋", uparrow: "↑", downarrow: "↓", updownarrow: "↕", nearrow: "↗", searrow: "↘", therefore: "∴", because: "∵", cdotp: "⋅", colon: ":", lt: "<", gt: ">" };
     const ORD = { infty: "∞", partial: "∂", nabla: "∇", hbar: "ℏ", ell: "ℓ", emptyset: "∅", varnothing: "∅", angle: "∠", degree: "°", aleph: "ℵ", Re: "ℜ", Im: "ℑ", prime: "′", forall: "∀", exists: "∃", neg: "¬", lnot: "¬", ldots: "…", dots: "…", cdots: "⋯", vdots: "⋮", ddots: "⋱", triangle: "△", square: "□", checkmark: "✓", imath: "ı", jmath: "ȷ", wp: "℘", top: "⊤", bot: "⊥" };
@@ -595,7 +572,7 @@
     const blackboard = s => styled(s, 0x1D538, 0x1D552, 0x1D7D8, { C: "ℂ", H: "ℍ", N: "ℕ", P: "ℙ", Q: "ℚ", R: "ℝ", Z: "ℤ" });
     const script = s => styled(s, 0x1D49C, 0x1D4B6, 0, { B: "ℬ", E: "ℰ", F: "ℱ", H: "ℋ", I: "ℐ", L: "ℒ", M: "ℳ", R: "ℛ", e: "ℯ", g: "ℊ", o: "ℴ" });
 
-    function braced(s, i) {                                   // s[i] is "{": the text up to the matching "}"
+    function braced(s, i) { // s[i] is "{": text up to matching "}"
         let depth = 0;
         for (let j = i; j < s.length; j++) {
             const c = s[j];
@@ -646,7 +623,7 @@
         return out;
     }
 
-    // a simple version of mhchem's \ce{...}: formulas, charges, arrows and state symbols
+    // simple \ce{...}: formulas charges arrows state symbols
     function ceToTex(s) {
         const ARROWS = { "<->": "\\leftrightarrow ", "<=>": "\\rightleftharpoons ", "->": "\\longrightarrow ", "<-": "\\longleftarrow ", "=>": "\\Rightarrow " };
         let out = "", i = 0, afterElement = false, m;
@@ -691,7 +668,7 @@
         function seq(stop) {
             const nodes = [];
             while (p < toks.length && !stop(toks[p])) {
-                if (toks[p].t === "cmd" && toks[p].v === "over") {            // {a \over b}
+                if (toks[p].t === "cmd" && toks[p].v === "over") { // {a \over b}
                     p++;
                     const den = seq(stop);
                     return `<mfrac><mrow>${nodes.join("")}</mrow><mrow>${den}</mrow></mfrac>`;
@@ -702,14 +679,14 @@
             return nodes.join("");
         }
 
-        function arg() {                                                      // one braced group or one token
+        function arg() { // one braced group or one token
             const t = toks[p];
             if (!t || t.t === "}" || t.t === "&" || t.t === "^" || t.t === "_") return EMPTY;
             if (t.t === "{") { p++; const inner = seq(x => x.t === "}"); p++; return `<mrow>${inner}</mrow>`; }
             if (t.t === "num" && t.v.length > 1 && !t.v.includes(".")) { toks[p] = { t: "num", v: t.v.slice(1) }; return `<mn>${t.v[0]}</mn>`; }
             return atom()?.ml ?? EMPTY;
         }
-        const optArg = () => {                                                // [ ... ]
+        const optArg = () => { // optional [ ... ]
             if (toks[p]?.t !== "op" || toks[p].v !== "[") return null;
             p++;
             const inner = seq(x => x.t === "op" && x.v === "]");
@@ -816,7 +793,7 @@
             const t = toks[p++];
             switch (t.t) {
                 case "{": { const inner = seq(x => x.t === "}"); p++; return { ml: `<mrow>${inner}</mrow>` }; }
-                case "^": case "_": p--; return { ml: EMPTY };                  // a script with no base, as in {}^{14}C
+                case "^": case "_": p--; return { ml: EMPTY }; // script with no base as in {}^{14}C
                 case "}": case "&": case "end": return null;
                 case "begin": return environment(t.v);
                 case "num": return { ml: `<mn>${t.v}</mn>` };
@@ -846,7 +823,7 @@
         }
     }
 
-    // Pull the math out before markdown runs (markdown would eat the underscores), leaving code untouched.
+    // pull math out before markdown (it would eat underscores); code untouched
     function extractMath(src, store) {
         const re = new RegExp([
             "(?<fence>(?:^|\\n)(?:`{3}|~{3})[\\s\\S]*?(?:\\n(?:`{3}|~{3})[^\\n]*|$))",
@@ -962,7 +939,7 @@
                     const li = LIST_ITEM.exec(lines[i]);
                     if (li) {
                         const item = { indent: li[1].replace(/\t/g, "    ").length, ordered: /\d/.test(li[2]), text: li[3] };
-                        if (items.length && item.indent === items[0].indent && item.ordered !== items[0].ordered) break;     // a bullet list followed by a numbered one
+                        if (items.length && item.indent === items[0].indent && item.ordered !== items[0].ordered) break; // bullet list followed by numbered one
                         items.push(item); i++; continue;
                     }
                     if (blank(lines[i]) && i + 1 < n && LIST_ITEM.test(lines[i + 1])) { i++; continue; }

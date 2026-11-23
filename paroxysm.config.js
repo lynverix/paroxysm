@@ -1,11 +1,8 @@
-// paroxysm configuration. This is the file to edit; nothing else needs to change.
+// paroxysm configuration
 window.PAROXYSM_CONFIG = {
-    // Built-in wisp servers, tried in this order unless you pick one in Settings > Proxy.
-    // They are stored encoded and shown in the UI as "Wisp Server 1", "Wisp Server 2", ...
-    // To change the list, run `python encode_wisp.py urls.txt` (one wss:// URL per line)
-    // and paste its output here.
-    // The encoding only keeps the URLs out of plain sight in the repository and the interface.
-    // It is not a secret: anyone with developer tools can still see which server paroxysm uses.
+    // built-in wisp servers in try order (encoded; shown as "Wisp Server N")
+    // regenerate with: python encode_wisp.py urls.txt
+    // encoding hides URLs from casual view; not a secret
     wispServers: [
         "L2l3L2dyby5zZWxwZXJwc2xyaWcvLzpzc3c=",
         "L2l3L3Rlbi5hc2FjeG9iLy86c3N3",
@@ -18,12 +15,11 @@ window.PAROXYSM_CONFIG = {
         "L3Rla2Nvcy9ncm8ucmV0bmVjZ25pbGVzbnVvY2Vyb3RzZXIvLzpzc3c="
     ],
 
-    // Optional shared key for the AI page (a free Google AI Studio key from a throwaway project, Gemma 4 only).
-    // Leave empty to make everyone paste their own key, or use the keyless Quick model. The key is visible to
-    // anyone who opens the site and Google may block it if it is found in a public repository.
+    // optional shared key for AI page (Gemma 4 only); empty = users paste their own
+    // visible to anyone; Google may block it if found in a public repo
     aiKey: "",
 
-    // Shown in Settings > About. Anything left empty is not shown.
+    // shown in Settings > About; empty entries are hidden
     version: "0.3.0",
     developers: "",
     gameSource: "",
