@@ -14,7 +14,7 @@
 4. **[revised]** The one real conflict with the "protected" rule was in the UI shell, not the engine: `index.html` and `newtab.html` hard-coded root-absolute paths (`/sw.js`, `/scramjet/...`, `/newtab.html`) and one regex that assumed the prefix is `/~/sj/`. The user approved path-only edits (A1, A2); they were done during the redesign. A3 (the `register("/sw.js")` string) stays untouched until the SVG phase, handled by the adapter.
 5. Fern ships no license file, only minified output, and its app page loads an obfuscated third-party ad script. paroxysm's loader is written independently from the documented behavior rather than copying Fern's code.
 6. Recommendation (approved): the SVG is only the bootstrap. After the Service Worker takes over, it serves the app as normal `text/html`, so mirage's HTML UI does not have to survive SVG/XML quirks.
-7. **[revised]** The riskiest assumptions were tested in milestone 0 and held: jsDelivr serves SVG as `image/svg+xml` with no CSP, a worker registers at the subpath scope, and `new Function()` works in the worker. One path is still untested: embedding the HTTPS copy in an **iframe** from a `file://` SVG (see section 4).
+7. **[revised]** The riskiest assumptions were tested in milestone 0 and held: jsDelivr serves SVG as `image/svg+xml` with no CSP, a worker registers at the subpath scope, and `new Function()` works in the worker. One path is still untested: embedding the HTTPS copy in an **iframe** from a `file://` SVG (see section 4). **[verified 2026-11-23]** M4 tested it in headless Chrome for Testing 158 and it works (`PROJECT_STATUS.md` section 6).
 
 ## 1. How mirage works today
 
@@ -81,7 +81,7 @@ Fern's repo contains built output only. Function names below are minified, so ea
 
 **Fern's app page also contains an obfuscated ad loader `[confirmed]`:** an XOR-encoded URL list (`https://photon.girlspreples.org/v1/m.js`) is fetched, run, and then `aclib.runPop({zoneId:...})` is called. paroxysm must not include anything like it; it would run third-party code in the same origin as the proxy. `rq.js` (305 KB, base64+`eval`) is also obfuscated and was not analyzed in depth.
 
-**Untested for paroxysm:** the iframe path from a `file://` outer document (cross-site iframe service worker registration, jsDelivr frame-blocking headers, the `allow` list, the `nosw` fallback). This is the first spike of the SVG phase.
+**[verified 2026-11-23]** M4 tested this path in headless Chrome for Testing 158: no frame-blocking headers, the worker registers and controls the iframe, the `allow` list is needed, the `nosw` redirect and `ld=0` guard work, storage persists partitioned under the `file://` top site (details in `PROJECT_STATUS.md` section 6). The user confirmed it in their own Chrome 156 the same day. Original note: **Untested for paroxysm:** the iframe path from a `file://` outer document (cross-site iframe service worker registration, jsDelivr frame-blocking headers, the `allow` list, the `nosw` fallback). This is the first spike of the SVG phase.
 
 ## 5. How Fern's Service Worker virtualization works
 
@@ -101,7 +101,7 @@ The registered worker (`v7m.js`) is a loader and package manager. The "actual" a
 
 **Protected (byte-for-byte unchanged):** everything in `scramjet/`, `controller/`, `epoxy/`, and the proxy-facing logic of `index.html`'s script: `register`, `probeWisp`, `new EpoxyTransport`, `transport.init()`, `new Controller({...})`, `controller.wait()`, `createFrame`, `frame.go`.
 
-**New files that wrap it (SVG phase, not yet built):**
+**New files that wrap it (SVG phase; [revised 2026-11-23] `paroxysm-adapter.js` and `sw-glue.js` were built in M5, together with a plain `paroxysm-sw.js` that M6's loader replaces):**
 - **`loader-sw.js`** (own implementation of section 5): the registered worker.
 - **`sw-glue.js`**: the five lines from mirage's `sw.js` minus `importScripts`. The manifest's `sw` becomes a list: `controller/controller.sw.js`, then `sw-glue.js`, evaluated in one function body (so `$scramjetController` is visible to the glue). No concatenation step and no edit to `controller.sw.js`.
 - **`paroxysm-adapter.js`**, loaded after `controller.api.js` and before the inline script, does two things: it sets `$scramjetController.config.{prefix, scramjetPath, injectPath, wasmPath}` from the SW scope (the `Controller` constructor deep-merges this exported object, and upstream's own `packages/bootstrap` uses the same pattern); and it wraps `navigator.serviceWorker.register` so mirage's `register("/sw.js")` registers the loader instead.
@@ -190,7 +190,7 @@ The SVG stays around 10–20 KB. Embedding the wasm would not help because the a
 6. **Unsigned manifest** until ECDSA lands: hashes protect files only if the manifest is trusted. Interim mitigation: pin by commit; first release from the user's own repo only.
 7. **WISP availability.** Without a reachable WISP server the proxy does not work at all. **[revised]** paroxysm now tries an ordered list of endpoints, so one dead endpoint is survivable.
 8. **Takedown risk.** jsDelivr's acceptable-use policy requires content to conform to the policies of the source host; mirrors can be removed.
-9. **Third-party storage partitioning.** **[revised]** This now matters: the iframe-first design runs the app in a cross-site iframe under a `file://` outer document, so its storage and Service Worker are partitioned and the partition is keyed to the outer document. Whether Chrome registers and keeps the worker in that setup is the first thing the SVG-phase spike must test.
+9. **Third-party storage partitioning.** **[verified 2026-11-23]** Chrome registers and keeps the worker in the iframe; its storage persists across reloads and restarts, is invisible to top-level jsDelivr pages and is shared by every local `file://` page (one top-level site); blocked third-party cookies do not stop it. **[revised]** This now matters: the iframe-first design runs the app in a cross-site iframe under a `file://` outer document, so its storage and Service Worker are partitioned and the partition is keyed to the outer document. Whether Chrome registers and keeps the worker in that setup is the first thing the SVG-phase spike must test.
 10. **Chrome-only** is the target; other browsers are untested.
 11. **Licensing:** Scramjet is AGPL-3.0; Fern has no license file, so no Fern code is copied.
 12. **[revised 2026-11-19] Games are not proxied.** LuminSDK's catalogue and game hosts are contacted directly and could be blocked on a restricted network; a play-through-the-proxy mode is a possible later step.
