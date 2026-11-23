@@ -322,11 +322,11 @@
 
         function norm(u) {
             if (!u) return "https://example.com";
-            return u.startsWith("http") ? u : "https://" + u;
+            return /^https?:\/\//i.test(u) ? u : "https://" + u;
         }
 
         function isUrl(str) {
-            return /^[^\s]+\.[^\s]+/.test(str) || str.startsWith("http");
+            return /^[^\s]+\.[^\s]+/.test(str) || /^https?:\/\//i.test(str);
         }
 
         function resolveInput(input) {
@@ -479,7 +479,9 @@
             };
             f.addEventListener("load", () => {
                 if (tab.frame && unservedFrame(f.contentWindow) && retryUnserved(tab)) return; // loaded without service worker route
-                f.classList.toggle("web", !!tab.frame); // proxied sites get white canvas
+                let html = true;
+                try { html = /html/.test(f.contentDocument.contentType); } catch {}
+                f.classList.toggle("web", !!tab.frame && html); // proxied html gets white canvas (text and json do not)
                 try { f.contentWindow.addEventListener("pagehide", hide); } catch {}
                 try { paroxysmCloak.watchWindow(f.contentWindow, !!tab.frame); } catch {} // panic key and masking
                 show();
