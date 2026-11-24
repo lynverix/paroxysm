@@ -8,6 +8,10 @@ const GH = BASE.match(/^\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/$/);
 const HEADS = LOCAL ? ["m.local.json", "m.json"].map(p => urlOf(p))
     : [urlOf("m.json"), ...(GH ? [`https://raw.githubusercontent.com/${GH[1]}/${GH[2]}/${GH[3]}/m.json`] : [])];
 const COMMIT = /^[0-9a-f]{40}$/;
+// release signing keys (ECDSA P-256 from tools/keygen.mjs); a second entry allows replacing a key
+const KEYS = [
+    { kty: "EC", crv: "P-256", x: "kDkvoZVSDxPQoA2WK29e4Kl06Ee7CxzyDWEMMADhF1M", y: "--MHVnutqAIT9NRDPmN15QAHV6cph43Kh0o7iJw7wjw" }
+];
 // cdn.jsdelivr.net shared by every repo so caches are namespaced by scope
 const NS = "paroxysm-ld:" + BASE + ":";
 const STATE = NS + "state";
@@ -49,10 +53,27 @@ async function writeState(key, value) {
     else await c.put(ORIGIN + BASE + "__" + key, new Response(JSON.stringify(value)));
 }
 
+let keys = null;
+
+async function verified(envelope) {
+    keys ??= Promise.all(KEYS.map(k => crypto.subtle.importKey("jwk", k, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"])));
+    const sig = Uint8Array.from(atob(envelope.s), c => c.charCodeAt(0));
+    const text = new TextEncoder().encode(envelope.m);
+    for (const key of await keys) if (await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, sig, text)) return true;
+    return false;
+}
+
+// online only signed manifests count; localhost also takes unsigned m.local.json
 async function readManifest(url) {
     const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) throw new Error(url + ": HTTP " + r.status);
-    const m = await r.json();
+    const data = await r.json();
+    let m;
+    if (typeof data.s === "string" && typeof data.m === "string") {
+        if (!(await verified(data))) throw new Error(url + ": bad signature");
+        m = JSON.parse(data.m);
+    } else if (LOCAL) m = data;
+    else throw new Error(url + ": not signed");
     if (m.v !== 1 || !m.files || !m.seq) throw new Error(url + ": unknown format");
     if (!LOCAL && !COMMIT.test(m.ref)) throw new Error(url + ": not a release");
     return m;

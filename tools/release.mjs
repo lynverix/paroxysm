@@ -1,8 +1,9 @@
-// publishes a release: m.json pinned to current commit, commit and push, refresh jsDelivr @main: node tools/release.mjs [--dry-run]
+// publishes a release: signed m.json pinned to current commit, commit and push, refresh jsDelivr @main: node tools/release.mjs [--dry-run]
 import { execSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { createHash, createPrivateKey, createPublicKey, sign } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { KEY_FILE } from "./keygen.mjs";
 import { build, root, write } from "./make-manifest.mjs";
 
 const dry = process.argv.includes("--dry-run");
@@ -21,13 +22,19 @@ for (const line of readFileSync(join(root, "protected.sha256"), "utf8").split("\
     if (createHash("sha256").update(readFileSync(join(root, file))).digest("hex") !== hash) stop(file + " differs from protected.sha256");
 }
 
+if (!existsSync(KEY_FILE)) stop("no signing key at " + KEY_FILE + "; run node tools/keygen.mjs or set PAROXYSM_KEY");
+const key = createPrivateKey({ key: JSON.parse(readFileSync(KEY_FILE, "utf8")), format: "jwk" });
+// loader must already trust this key or every install would refuse release
+if (!readFileSync(join(root, "loader-sw.js"), "utf8").includes(createPublicKey(key).export({ format: "jwk" }).x)) stop("loader-sw.js does not list the public key of " + KEY_FILE);
+const signer = text => sign("sha256", Buffer.from(text), { key, dsaEncoding: "ieee-p1363" }).toString("base64");
+
 const version = readFileSync(join(root, "paroxysm.config.js"), "utf8").match(/version:\s*"([^"]+)"/)?.[1] ?? "unknown";
 const ref = git("rev-parse HEAD");
 const manifest = build(ref);
 console.log(`release ${version}: files from ${owner}/${repo}@${ref.slice(0, 7)}, seq ${manifest.seq}`);
 if (dry) { console.log("dry run: nothing written, committed or pushed"); process.exit(0); }
 
-write("m.json", manifest);
+write("m.json", manifest, signer);
 git("add m.json");
 git(`commit -m "Release ${version} (files from ${ref.slice(0, 7)})"`);
 git("push origin main");
