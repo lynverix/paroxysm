@@ -58,7 +58,7 @@ Everything else lives in the menu (top right) and in Settings.
 
 ## Thanks
 
-paroxysm stands on the shoulders of [Scramjet](https://github.com/MercuryWorkshop/scramjet) and the [Epoxy](https://github.com/MercuryWorkshop/epoxy-tls) transport by Mercury Workshop. It carries on from mirage, and its look takes inspiration from Fern and Refract. Games come from gn-math and LuminSDK. AI answers come from Pollinations, Google Gemini, DeepSeek and Puter. The typeface is [Inter](https://rsms.me/inter/), the icons are [Lucide](https://lucide.dev), and the Home background is Color Bends from [React Bits](https://reactbits.dev) by David Haz.
+paroxysm stands on the shoulders of [Scramjet](https://github.com/MercuryWorkshop/scramjet) and the [Epoxy](https://github.com/MercuryWorkshop/epoxy-tls) transport by Mercury Workshop. It carries on from mirage, and its look takes inspiration from Fern and Refract. Games come from gn-math and LuminSDK. AI answers come from Pollinations, Google Gemini, DeepSeek and Puter. The typeface is [Inter](https://rsms.me/inter/), the icons are [Lucide](https://lucide.dev), and the Home background is Color Bends from [React Bits](https://reactbits.dev) by David Haz. Thanks also to x8rr's [scramjet-templates](https://github.com/x8rr/scramjet-templates).
 
 ## For developers
 
