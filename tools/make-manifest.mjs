@@ -71,10 +71,10 @@ export function build(ref) {
     };
 }
 
-// sign(text) returns base64 signature; signed files are { s, m } with m as exact signed text
+// sign(text) returns base64 signature; sig.m holds exact signed text and plain fields stay readable for older loaders
 export function write(name, manifest, sign) {
     const body = JSON.stringify(manifest);
-    writeFileSync(join(root, name), (sign ? JSON.stringify({ s: sign(body), m: body }, null, 1) : JSON.stringify(manifest, null, 1)) + "\n");
+    writeFileSync(join(root, name), JSON.stringify(sign ? { ...manifest, sig: { s: sign(body), m: body } } : manifest, null, 1) + "\n");
     const { files, boot, warm } = manifest;
     const bytes = list => list.reduce((n, p) => n + files[p][1], 0);
     console.log(`${name}: ${Object.keys(files).length} files, boot ${boot.length} (${(bytes(boot) / 1e6).toFixed(1)} MB), warm ${warm.length}, seq ${manifest.seq}, ref ${manifest.ref.slice(0, 7)}`);

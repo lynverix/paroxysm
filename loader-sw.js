@@ -55,23 +55,23 @@ async function writeState(key, value) {
 
 let keys = null;
 
-async function verified(envelope) {
+async function verified(sig) {
     keys ??= Promise.all(KEYS.map(k => crypto.subtle.importKey("jwk", k, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"])));
-    const sig = Uint8Array.from(atob(envelope.s), c => c.charCodeAt(0));
-    const text = new TextEncoder().encode(envelope.m);
-    for (const key of await keys) if (await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, sig, text)) return true;
+    const s = Uint8Array.from(atob(sig.s), c => c.charCodeAt(0));
+    const text = new TextEncoder().encode(sig.m);
+    for (const key of await keys) if (await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, s, text)) return true;
     return false;
 }
 
-// online only signed manifests count; localhost also takes unsigned m.local.json
+// online only signed text in sig.m counts and plain fields are ignored; localhost also takes unsigned m.local.json
 async function readManifest(url) {
     const r = await fetch(url, { cache: "no-store" });
     if (!r.ok) throw new Error(url + ": HTTP " + r.status);
     const data = await r.json();
     let m;
-    if (typeof data.s === "string" && typeof data.m === "string") {
-        if (!(await verified(data))) throw new Error(url + ": bad signature");
-        m = JSON.parse(data.m);
+    if (typeof data.sig?.s === "string" && typeof data.sig?.m === "string") {
+        if (!(await verified(data.sig))) throw new Error(url + ": bad signature");
+        m = JSON.parse(data.sig.m);
     } else if (LOCAL) m = data;
     else throw new Error(url + ": not signed");
     if (m.v !== 1 || !m.files || !m.seq) throw new Error(url + ": unknown format");
