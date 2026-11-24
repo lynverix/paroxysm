@@ -2,7 +2,7 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22); `epoxy/index.js` was rebuilt on 2026-11-23 with a larger HTTP/2 header limit so YouTube works. The single-file `index.svg` launcher works, with signed releases and automatic updates (milestones M4 to M9, version 0.8.0-alpha).
+Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22); `epoxy/index.js` was rebuilt on 2026-11-23 with a larger HTTP/2 header limit so YouTube works. The single-file `index.svg` launcher works, with signed releases and automatic updates (milestones M4 to M9). Current version: 1.0.0; see `paroxysm://changelog` (Menu > Changelog).
 
 ## Open it
 
@@ -25,6 +25,7 @@ The registered service worker is `loader-sw.js`. It only serves files whose SHA-
 | Path | What it is |
 |---|---|
 | `index.html`, `newtab.html`, `settings.html`, `paroxysm.css` | The interface (browser shell, Home page, settings page) |
+| `changelog.html`, `paroxysm-changelog.js` | The Changelog page (Menu > Changelog, or `paroxysm://changelog`). Add a version by adding one entry at the top of `paroxysm-changelog.js`: version, date, a short summary and a list of `[kind, text]` changes (`added`, `improved`, `fixed`, `removed`) |
 | `games.html` | The Games page and the game player, with a picker between two sources: gn-math (default; catalogue, covers and game pages from the `freebuisness` repos on jsDelivr, games run in a sandboxed iframe) and LuminSDK (loaded from jsDelivr, pinned to a commit) |
 | (shell, Home) | `index.html` has the horizontal/vertical tab layouts, the bookmarks bar and the coloured omnibox; `newtab.html` has the shortcuts panel |
 | `assistant.html`, `paroxysm-ai.js`, `paroxysm-ai-settings.js` | The AI page (`paroxysm://assistant`; LaTeX equations are shown as real maths; its settings are also in Settings > AI): chat history, Gemma 4 and Gemini (your own free key or an optional shared one), DeepSeek (your own key), Puter models (sign in with a Puter account, no key), and a keyless Quick model sent through the proxy. The engine file holds the providers, usage counter, chat storage, markdown renderer and the Puter bridge |

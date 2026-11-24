@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" class="page">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog</title>
+    <link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="paroxysm.css">
+    <link rel="icon" href="assets/paroxysm/paroxysm_darkmode_favicon.ico" sizes="any">
+    <script src="paroxysm-settings.js"></script>
+    <script src="paroxysm-rise.js"></script>
+    <script src="paroxysm-changelog.js"></script>
+    <style>
+        body.changelog { background: var(--surface); }
+        .cl { max-width: 720px; margin: 0 auto; padding: 40px var(--s5) var(--s7); }
+        .cl .page-title { margin-bottom: var(--s6); }
+        .cl-list { list-style: none; }
+        .cl-entry { position: relative; padding: 0 0 var(--s7) var(--s6); }
+        .cl-entry:last-child { padding-bottom: 0; }
+        .cl-entry::before { content: ""; position: absolute; left: 5px; top: 22px; bottom: 2px; width: 2px; border-radius: var(--pill); background: var(--border); }
+        .cl-entry:last-child::before { display: none; }
+        .cl-dot { position: absolute; left: 0; top: 7px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-2); background: var(--surface); }
+        .cl-entry.latest .cl-dot { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+        .cl-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--s2) var(--s3); }
+        .cl-version { font-size: 18px; font-weight: 600; letter-spacing: -.01em; line-height: 26px; }
+        .cl-date { color: var(--text-3); font-size: 13px; }
+        .cl-tag { align-self: center; padding: 2px var(--s2); border-radius: var(--pill); background: var(--accent-soft); color: var(--accent-2); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+        html[data-theme="light"] .cl-tag { color: color-mix(in srgb, var(--accent) 70%, #000); }
+        .cl-summary { margin-top: var(--s2); color: var(--text-2); }
+        .cl-changes { list-style: none; margin-top: var(--s4); display: flex; flex-direction: column; gap: var(--s1); }
+        .cl-change { --kind: var(--ok); display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s2) var(--s3); margin-left: calc(var(--s3) * -1); border-radius: 12px; color: var(--text-2); transition: background .15s ease; }
+        .cl-change:hover { background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+        .cl-change.improved { --kind: var(--accent-2); }
+        .cl-change.fixed { --kind: var(--warn); }
+        .cl-change.removed { --kind: var(--err); }
+        html[data-theme="light"] .cl-change.improved { --kind: color-mix(in srgb, var(--accent) 75%, #000); }
+        .cl-badge { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: color-mix(in srgb, var(--kind) 16%, transparent); color: var(--kind); }
+        .cl-badge .icon { width: 14px; height: 14px; stroke-width: 2.5; }
+        .cl-text { padding-top: 1px; line-height: 20px; }
+        .cl-empty { color: var(--text-3); }
+        @media (prefers-reduced-motion: reduce) { .cl-change { transition: none; } }
+    </style>
+</head>
+
+<body class="changelog">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+        <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+        <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7" /><path d="M12 19V5" /></symbol>
+        <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z" /></symbol>
+    </svg>
+
+    <main class="cl">
+        <h1 class="page-title" data-rise>Changelog</h1>
+        <ol class="cl-list" id="list"></ol>
+    </main>
+
+    <script>
+        (() => {
+            const KINDS = { added: ["plus", "Added"], improved: ["arrow-up", "Improved"], fixed: ["wrench", "Fixed"], removed: ["minus", "Removed"] };
+            const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+            const icon = name => {
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute("class", "icon");
+                svg.setAttribute("aria-hidden", "true");
+                const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+                use.setAttribute("href", "#i-" + name);
+                svg.append(use);
+                return svg;
+            };
+            const when = iso => {
+                const d = new Date(iso + "T00:00:00");
+                return isNaN(d) ? ["", ""] : [d.toLocaleDateString("en", { month: "long", year: "numeric" }), d.toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })];
+            };
+
+            const list = document.getElementById("list");
+            const entries = Array.isArray(window.PAROXYSM_CHANGELOG) ? window.PAROXYSM_CHANGELOG : [];
+            if (!entries.length) list.append(el("li", "cl-empty", "Nothing here yet."));
+            entries.forEach((entry, i) => {
+                const li = el("li", "cl-entry" + (i === 0 ? " latest" : ""));
+                const head = el("div", "cl-head");
+                head.dataset.rise = "";
+                const dot = el("span", "cl-dot");
+                dot.dataset.rise = "";
+                head.append(el("h2", "cl-version", "v" + entry.version));
+                const [month, full] = when(entry.date);
+                if (month) { const t = el("time", "cl-date", month); t.dateTime = entry.date; t.title = full; head.append(t); }
+                if (i === 0) head.append(el("span", "cl-tag", "Latest"));
+                li.append(dot, head);
+                if (entry.summary) { const p = el("p", "cl-summary", entry.summary); p.dataset.rise = ""; li.append(p); }
+                const ul = el("ul", "cl-changes");
+                for (const [kind, text] of entry.changes ?? []) {
+                    const [iconName, label] = KINDS[kind] ?? KINDS.added;
+                    const row = el("li", "cl-change " + (KINDS[kind] ? kind : "added"));
+                    row.dataset.rise = "";
+                    const badge = el("span", "cl-badge");
+                    badge.title = label;
+                    badge.append(icon(iconName));
+                    row.append(badge, el("span", "cl-text", text));
+                    ul.append(row);
+                }
+                li.append(ul);
+                list.append(li);
+            });
+        })();
+    </script>
+</body>
+
+</html>

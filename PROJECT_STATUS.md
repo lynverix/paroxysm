@@ -1,6 +1,6 @@
 # PROJECT_STATUS.md — paroxysm current development status
 
-Snapshot: 2026-11-23, end of the session that built the whole SVG bootstrap and Service Worker phase. Done: M0 spike, M1 baseline, M2 UI redesign, M3 baseline re-run, M4 iframe-embedding spike, M5 adapter, M6 loader worker, M7 `index.svg` launcher, M8 release tooling, M9 hardening (signed manifests, jsDelivr mirror hostnames); every milestone up to M8 was confirmed by the user in their own Chrome, M9 was tested headless and released (release 4, `03637fa`; the user has not reported its checklist yet). The app is version 0.8.0-alpha and runs from a downloaded `index.svg`. Nothing is half-built. **B10 (YouTube) is fixed (2026-11-23, approved):** `epoxy/index.js` is now our own rebuild of the Epoxy transport with a larger HTTP/2 header limit; it is committed but **not released yet**: the user checks it in their own Chrome first, then `node tools/release.mjs` (section 7). Written from an inspection of the project files; if anything here disagrees with the actual files, the files win; tell the user and fix this document.
+Snapshot: 2026-11-23, end of the session that built the whole SVG bootstrap and Service Worker phase. Done: M0 spike, M1 baseline, M2 UI redesign, M3 baseline re-run, M4 iframe-embedding spike, M5 adapter, M6 loader worker, M7 `index.svg` launcher, M8 release tooling, M9 hardening (signed manifests, jsDelivr mirror hostnames); every milestone up to M8 was confirmed by the user in their own Chrome, M9 was tested headless and released (release 4, `03637fa`; the user has not reported its checklist yet). The app is version 1.0.0 (since 2026-11-23; releases 1 to 4 were 0.8.0-alpha) and runs from a downloaded `index.svg`. Nothing is half-built. **B10 (YouTube) is fixed (2026-11-23, approved):** `epoxy/index.js` is now our own rebuild of the Epoxy transport with a larger HTTP/2 header limit; it is committed but **not released yet**: the user checks it in their own Chrome first, then `node tools/release.mjs` (section 7). Written from an inspection of the project files; if anything here disagrees with the actual files, the files win; tell the user and fix this document.
 
 ## 1. Where we are
 
@@ -63,6 +63,8 @@ paroxysm/
 ├─ paroxysm.config.js      encoded wispServers, version, credit strings (developers, gameSource, aiProvider, extensions, uiInspiration)
 ├─ encode_wisp.py          makes the encoded wisp entries from a text file of URLs
 ├─ paroxysm-cloak.js       tab disguise, panic key, character masking (shell only)
+├─ changelog.html          Changelog page (paroxysm://changelog, only linked from the Menu); entries in paroxysm-changelog.js
+├─ paroxysm-changelog.js   window.PAROXYSM_CHANGELOG: one entry per version, newest first
 ├─ games.html              Games page and player: gn-math (default) and LuminSDK (headless; pinned commit + SRI) behind one interface
 ├─ assistant.html          the AI page (paroxysm://assistant)
 ├─ paroxysm-ai.js          AI engine (window.paroxysmAI): providers, usage, chat storage, markdown and LaTeX, Puter bridge
@@ -202,7 +204,11 @@ Introduced or open on our side:
 
 ### Next, in the user's order
 
-**Next: the user checks B10 in their own Chrome, then the release.** The change is committed; `m.json` still points at the previous release, so users are unaffected until `node tools/release.mjs` runs (`--dry-run` first). Checklist:
+**Done 2026-11-23 (after B10, B17, B18, the user said "it works"): the changelog page and version 1.0.0.** The user asked for `paroxysm://changelog` like Fern's (screenshots), with v1.0.0 and the change "paroxysm created", entries in a separate script, reachable only from the Menu, and chose: version 1.0.0, the typed address keeps working, release only when they say so. New `changelog.html` and `paroxysm-changelog.js` (rules in CLAUDE.md section 5); `index.html`: route `changelog`, the `scroll-text` icon, a Changelog item above About in the Menu; `paroxysm.config.js` version `1.0.0`. The v1.0.0 entry has the summary "The first stable release." (Claude's wording; edit freely). Tested headless (Chrome for Testing 158, npm `live-server`): the Menu item opens one Changelog tab (a second click focuses it), title, omnibox text and icon are right, the typed address works, dark and light themes, a sample with all four kinds and two versions (timeline, Latest pill, wrapping), character masking at 100%. **Not tested:** the user's Chrome.
+
+**Next: release when the user says so.** B10, B17 and B18 were confirmed by the user ("It works!", 2026-11-23, Edge and Vivaldi). Everything since release 4 is committed locally and not pushed: run `node tools/release.mjs --dry-run`, then `node tools/release.mjs` (it pushes and publishes 1.0.0) only after the user's word.
+
+**Earlier: the user checks B10 in their own Chrome, then the release.** The change is committed; `m.json` still points at the previous release, so users are unaffected until `node tools/release.mjs` runs (`--dry-run` first). Checklist:
 1. Live Server as usual (dev mode) or `python -m http.server 8080` after `node tools/make-manifest.mjs` (strict). Reload once (F5). If proxied pages say `Cannot GET /~/sj/...`, that was B17 (section 5); it is fixed in the same commit series, so reload once more.
 2. Open `youtube.com`: the page loads (signed out it may show only a search prompt). Open a video, also one with ads (for example `dQw4w9WgXcQ`): it plays, with sound, and the tab no longer crashes (B18, section 5). Try `youtu.be/jNQXAC9IVRw`, seeking and a quality change, in Chrome and in Edge or Vivaldi.
 3. Quick usual checks: example.com, a search, Discord, Games, the AI page with Quick.
