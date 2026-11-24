@@ -2,7 +2,11 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher is next and not built yet (milestones M4 to M9: iframe-embedding spike, adapter, loader worker, SVG loader, release tooling, hardening).
+Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher works (milestones M4 to M7); release tooling (M8) and hardening with signed manifests (M9) are next.
+
+## Open it
+
+Download `index.svg` and open it in Chrome (double-click). It finds a paroxysm server, shows a loading screen while the files download and are checked, and then runs paroxysm inside the page; the address bar keeps showing the local file. The first start downloads about 3 MB; later starts are instant. If the page can't start its service worker it opens the hosted copy directly instead. `index.svg` points at a fixed commit of this repository on jsDelivr, so a new version reaches it when that pin is moved.
 
 ## Run locally
 
@@ -31,6 +35,8 @@ The registered service worker is `loader-sw.js`. It only serves files whose SHA-
 | `encode_wisp.py` | Turns a text file of wss:// URLs into the encoded entries for `paroxysm.config.js` |
 | `paroxysm-cloak.js` | Tab disguise, panic key and character masking |
 | `paroxysm-adapter.js`, `sw-glue.js` | Let paroxysm run from any folder (the site root or a jsDelivr-style path such as `/gh/<owner>/<repo>@<ref>/`): the adapter points the proxy engine at the folder the page is served from and registers `loader-sw.js` instead of `sw.js`; `sw-glue.js` is mirage's fetch glue without `importScripts` |
+| `index.svg` | The launcher: opened from disk it races its servers and embeds the winner in a full-window frame; on the server it installs `loader-sw.js` with a progress bar and opens the app. A full-page redirect (`?ld=0`) is only the fallback when the frame can't run a service worker |
+| `paroxysm-outer.js` | Inside the launcher's frame: tells the launcher when paroxysm is ready and copies the tab title and icon to the real browser tab (so the tab disguise shows) |
 | `loader-sw.js`, `m.json`, `tools/make-manifest.mjs` | The service worker: it downloads the files listed in `m.json`, checks each one's SHA-256, serves them from its cache and runs the Scramjet controller's worker code inside itself. `make-manifest.mjs` writes `m.json` |
 | `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (epoxy/index.js is not modified) |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
