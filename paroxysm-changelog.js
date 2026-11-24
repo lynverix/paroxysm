@@ -5,7 +5,10 @@ window.PAROXYSM_CHANGELOG = [
         date: "2026-11-23",
         summary: "The first stable release.",
         changes: [
-            ["added", "paroxysm created"]
+            ["added", "paroxysm created"],
+            ["improved", "Test"],
+            ["fixed", "Test"],
+            ["removed", "Test"]
         ]
     }
 ];
