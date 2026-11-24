@@ -2,7 +2,7 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher works (milestones M4 to M7); release tooling (M8) and hardening with signed manifests (M9) are next.
+Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher works, with signed releases and automatic updates (milestones M4 to M9, version 0.8.0-alpha). Next: fixing YouTube (B10), which most likely needs a rebuilt Epoxy transport.
 
 ## Open it
 
