@@ -6,7 +6,7 @@ Status: the interface is finished and the baseline checklist has been re-run on 
 
 ## Open it
 
-Download `index.svg` and open it in Chrome (double-click). It finds a paroxysm server, shows a loading screen while the files download and are checked, and then runs paroxysm inside the page; the address bar keeps showing the local file. The first start downloads about 3 MB; later starts are instant. If the page can't start its service worker it opens the hosted copy directly instead. `index.svg` points at a fixed commit of this repository on jsDelivr, so a new version reaches it when that pin is moved.
+Download `index.svg` and open it in Chrome (double-click). It finds a paroxysm server, shows a loading screen while the files download and are checked, and then runs paroxysm inside the page; the address bar keeps showing the local file. The first start downloads about 3 MB; later starts are instant. If the page can't start its service worker it opens the hosted copy directly instead. New versions arrive by themselves: the next start downloads and checks a new release in the background, and the start after that uses it.
 
 ## Run locally
 
@@ -18,7 +18,7 @@ python -m http.server 8080
 
 then open `http://localhost:8080/`. VS Code Live Server also works.
 
-The registered service worker is `loader-sw.js`. It only serves files whose SHA-256 matches `m.json`, so after changing any file run `node tools/make-manifest.mjs` (Node 20 or newer, no packages). On localhost, adding `?dev` to the address (or using Live Server, which is detected automatically because it changes every HTML file) loads files straight from the server without checks.
+The registered service worker is `loader-sw.js`. It only serves files whose SHA-256 matches the manifest, so for local testing run `node tools/make-manifest.mjs` after changing any file (Node 20 or newer, no packages); it writes `m.local.json`, which the loader reads first on localhost. On localhost, adding `?dev` to the address (or using Live Server, which is detected automatically because it changes every HTML file) loads files straight from the server without checks.
 
 ## Layout
 
@@ -37,7 +37,7 @@ The registered service worker is `loader-sw.js`. It only serves files whose SHA-
 | `paroxysm-adapter.js`, `sw-glue.js` | Let paroxysm run from any folder (the site root or a jsDelivr-style path such as `/gh/<owner>/<repo>@<ref>/`): the adapter points the proxy engine at the folder the page is served from and registers `loader-sw.js` instead of `sw.js`; `sw-glue.js` is mirage's fetch glue without `importScripts` |
 | `index.svg` | The launcher: opened from disk it races its servers and embeds the winner in a full-window frame; on the server it installs `loader-sw.js` with a progress bar and opens the app. A full-page redirect (`?ld=0`) is only the fallback when the frame can't run a service worker |
 | `paroxysm-outer.js` | Inside the launcher's frame: tells the launcher when paroxysm is ready and copies the tab title and icon to the real browser tab (so the tab disguise shows) |
-| `loader-sw.js`, `m.json`, `tools/make-manifest.mjs` | The service worker: it downloads the files listed in `m.json`, checks each one's SHA-256, serves them from its cache and runs the Scramjet controller's worker code inside itself. `make-manifest.mjs` writes `m.json` |
+| `loader-sw.js`, `m.json`, `tools/make-manifest.mjs`, `tools/release.mjs` | The service worker: it downloads the files listed in `m.json` from the release's commit, checks each one's SHA-256, serves them from its cache and runs the Scramjet controller's worker code inside itself. `make-manifest.mjs` writes the local test manifest `m.local.json`; `release.mjs` writes `m.json` and publishes |
 | `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (epoxy/index.js is not modified) |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
 | `fonts/`, `assets/` | Inter (variable: latin, cyrillic, cyrillic-ext and greek subsets); logo and icons live in `assets/paroxysm/` |
@@ -52,6 +52,10 @@ Check the protected files at any time with `python verify_protected.py`.
 - A proxied tab shows a white page saying `Cannot GET /~/sj/...`: that is the local server answering because the service worker did not route the request (it can happen after a hard reload, Ctrl+Shift+R, followed by a worker restart). paroxysm now repairs this on its own: a page the worker does not control reloads itself once, and a proxied page that loaded unserved is retried twice. If it still happens, open the console and look for lines starting with `[paroxysm]`; "Bypass for network" in DevTools > Application > Service workers must be off.
 - YouTube pages (`youtube.com`, `youtu.be`) fail with a `Hyper client ... Http2 ... PROTOCOL_ERROR` error. That is a limit of the Epoxy transport, not something paroxysm can fix; other sites, including Discord and Google, work.
 - Menu > Reconnect only replaces the connection to the wisp server; Menu > Find best server picks another server.
+
+## Publishing a release
+
+Commit your changes, then run `node tools/release.mjs` (add `--dry-run` to only see what it would do). It checks that the working tree is clean, `main` is up to date and the protected files are unchanged, writes `m.json` pointing at the current commit, commits and pushes it, and asks jsDelivr to refresh its `@main` copies. Files are always downloaded from that exact commit, so they can't be stale; `m.json` itself is read from jsDelivr and GitHub and the newest one wins.
 
 ## Configuration
 
