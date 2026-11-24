@@ -8,6 +8,24 @@
         wasmPath: base + "scramjet/scramjet.wasm"
     });
 
+    // chromium crashes tab (STATUS_BREAKPOINT) on view transitions in proxied youtube; scramjet issue 222
+    const SKIP_TRANSITIONS = /(^|\.)youtube\.com$/;
+    const { Controller, ManagedPlugin } = $scramjetController;
+    class SkipViewTransitions extends ManagedPlugin {
+        constructor() { super("paroxysm-skip-view-transitions", []); }
+        install(frame) {
+            super.install(frame);
+            this.tap(frame.hooks.init.post, ({ client }) => {
+                if (!SKIP_TRANSITIONS.test(client.url.hostname)) return;
+                client.Proxy("Document.prototype.startViewTransition", { apply(ctx) { ctx.call()?.skipTransition?.(); } });
+            });
+        }
+    }
+    const createFrame = Controller.prototype.createFrame;
+    Controller.prototype.createFrame = function (element, options = {}) {
+        return createFrame.call(this, element, { ...options, plugins: [...(options.plugins ?? []), new SkipViewTransitions()] });
+    };
+
     const sw = navigator.serviceWorker;
     if (!sw) return;
     const register = sw.register.bind(sw);

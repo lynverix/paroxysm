@@ -52,6 +52,7 @@ Check the protected files at any time with `python verify_protected.py`.
 
 - A proxied tab shows a white page saying `Cannot GET /~/sj/...`: that is the local server answering because the service worker did not route the request (it can happen after a hard reload, Ctrl+Shift+R, followed by a worker restart, or when an updated service worker replaces the old one while paroxysm is open). paroxysm now repairs this on its own: a page the worker does not control reloads itself once, and a proxied page that loaded unserved is retried twice. If it still happens, open the console and look for lines starting with `[paroxysm]`; "Bypass for network" in DevTools > Application > Service workers must be off.
 - YouTube used to fail with a `Hyper client ... Http2 ... PROTOCOL_ERROR` error; paroxysm's own Epoxy build fixes that. If it comes back after an engine update, `epoxy/index.js` was probably replaced with the npm file: rebuild it with `tools/epoxy/` instead.
+- The whole tab crashes with `STATUS_BREAKPOINT` (or a sad-tab page) on a site: a Chromium bug with view transitions in proxied pages ([Scramjet issue 222](https://github.com/MercuryWorkshop/scramjet/issues/222)). paroxysm skips those transitions on YouTube; if another site does it, its host can be added to `SKIP_TRANSITIONS` in `paroxysm-adapter.js`.
 - Menu > Reconnect only replaces the connection to the wisp server; Menu > Find best server picks another server.
 
 ## Publishing a release
