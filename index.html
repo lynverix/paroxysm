@@ -1117,10 +1117,24 @@
             if (++tab.reviveRetries > 2) return false;
             console.warn("[paroxysm] a proxied page loaded without the service worker's route; re-registering with the worker and reloading (try " + tab.reviveRetries + ").",
                 { controlled: !!navigator.serviceWorker.controller, revived: recentlyRevived(), page: (() => { try { return tab.iframe.contentWindow.location.href.slice(0, 120) + " " + tab.iframe.contentDocument.contentType; } catch { return "?"; } })() });
-            try { (tab.frame?.controller ?? scramjet)?.setupMessagePort?.(); } catch (e) { console.error(e); }
+            try { const c = tab.frame?.controller ?? scramjet; if (!followWorker(c)) c?.setupMessagePort?.(); } catch (e) { console.error(e); }
             setTimeout(() => { try { tab.iframe.contentWindow.location.reload(); } catch {} }, 300);
             return true;
         }
+
+        // worker replaced by update leaves controller posting its port to dead worker; point it at new one
+        function followWorker(c) {
+            const sw = navigator.serviceWorker?.controller;
+            if (!c || !sw || c.serviceWorkerController === sw || typeof c.setupMessagePort !== "function") return false;
+            console.warn("[paroxysm] the service worker was replaced; reconnecting the proxy to the new one.");
+            c.serviceWorkerController = sw;
+            c.setupMessagePort();
+            return true;
+        }
+
+        navigator.serviceWorker?.addEventListener("controllerchange", () => {
+            if (ready && followWorker(scramjet)) setTimeout(reloadUnservedFrames, 1500);
+        });
 
         navigator.serviceWorker?.addEventListener("message", e => {
             if (!e.data?.$controller$swrevive || !ready) return;
