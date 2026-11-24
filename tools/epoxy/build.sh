@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# builds epoxy/index.js (epoxy-transport 3.0.2 + patched epoxy-tls 2.1.20-1); usage in PROJECT_STATUS.md section 9
+# builds epoxy/index.js (epoxy-transport 3.0.2 + patched epoxy-tls 2.1.20-1); usage in README.md, "The Epoxy build"
 set -euo pipefail
 P=/p
 OUT=/out
