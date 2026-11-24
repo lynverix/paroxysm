@@ -25,5 +25,6 @@ window.PAROXYSM_CONFIG = {
     gameSource: "gn-math | LuminSDK",
     aiProvider: "Pollinations | Puter, Google Gemini, DeepSeek",
     extensions: "",
-    uiInspiration: "Fern, Refract"
+    uiInspiration: "Fern, Refract",
+    scramjetTemplate: "x8rr/scramjet-templates"
 };

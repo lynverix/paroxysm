@@ -23,6 +23,7 @@
         <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></symbol>
         <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /><path d="m2 2 20 20" /></symbol>
         <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /><path d="M6.453 15h11.094" /><path d="M8.5 2h7" /></symbol>
+        <symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></symbol>
         <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></symbol>
         <symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6" /></symbol>
         <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
@@ -425,8 +426,12 @@
             const credits = $("creditList");
             credits.replaceChildren();
             [["Developers", cfg.developers], ["Game source", cfg.gameSource], ["AI provider", cfg.aiProvider],
-             ["Extensions", cfg.extensions], ["UI inspiration", cfg.uiInspiration]].forEach(([k, v]) => {
-                if (v) credits.append(h("dt", { text: k }), h("dd", { text: v }));
+             ["Extensions", cfg.extensions], ["UI inspiration", cfg.uiInspiration],
+             ["Scramjet template", cfg.scramjetTemplate, "https://github.com/x8rr/scramjet-templates"]].forEach(([k, v, href]) => {
+                if (!v) return;
+                // opens real browser tab not proxied one
+                const value = href ? h("a", { class: "kv-link", href, target: "_blank", rel: "noopener noreferrer" }, v, icon("external-link")) : v;
+                credits.append(h("dt", { text: k }), h("dd", {}, value));
             });
             credits.closest(".card").hidden = !credits.children.length;
             $("buildInfo").textContent = "paroxysm v" + (info.version ?? cfg.version ?? "dev");

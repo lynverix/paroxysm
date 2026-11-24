@@ -780,6 +780,9 @@ body.settings { background: var(--surface); height: 100%; overflow: hidden; --se
 .kv { display: grid; grid-template-columns: 140px 1fr; gap: var(--s3) var(--s4); }
 .kv dt { color: var(--text-3); }
 .kv dd { color: var(--text); }
+.kv-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--text) 30%, transparent); text-underline-offset: 3px; }
+.kv-link:hover { text-decoration-color: currentColor; }
+.kv-link .icon { width: 14px; height: 14px; color: var(--text-3); }
 .credits { margin-top: var(--s3); color: var(--text-2); line-height: 1.8; list-style: none; }
 
 @media (max-width: 720px) {
