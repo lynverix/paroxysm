@@ -1,13 +1,14 @@
 {
  "v": 1,
- "seq": 1795485542070,
- "ref": "1f8e9784680876aa8f5665e50738d20a85928d4e",
+ "seq": 1795496391988,
+ "ref": "20c6d79a84e79e59fc6b7d3c3bf18a29ca9b211b",
  "sw": [
   "controller/controller.sw.js",
   "sw-glue.js"
  ],
  "docs": [
   "assistant.html",
+  "changelog.html",
   "games.html",
   "index.html",
   "newtab.html",
@@ -43,6 +44,7 @@
   "assets/paroxysm/paroxysm_darkmode_favicon.ico",
   "assets/paroxysm/paroxysm_lightmode_favicon.ico",
   "assistant.html",
+  "changelog.html",
   "controller/controller-external.mjs",
   "fonts/inter-cyrillic-ext-wght-normal.woff2",
   "fonts/inter-cyrillic-wght-normal.woff2",
@@ -53,6 +55,7 @@
   "licenses/react-bits-MIT-CommonsClause.txt",
   "paroxysm-ai-settings.js",
   "paroxysm-ai.js",
+  "paroxysm-changelog.js",
   "puter-frame.html",
   "settings.html"
  ],
@@ -85,6 +88,10 @@
    "caNdicIpjSW/ds1C1W+wrNtT5DnkjvMfO0ykF1pbNQg=",
    54502
   ],
+  "changelog.html": [
+   "SnogajSFfqvE287WVdD0MFnX1BTBY+2HQJ5MyW1OBIg=",
+   6977
+  ],
   "controller/controller-external.mjs": [
    "l5VqGxdKDBNDhibOEduqedzbIQUVqMq8/66l8/KD088=",
    294
@@ -114,8 +121,8 @@
    18693
   ],
   "epoxy/index.js": [
-   "VaxruI0sJ/Q93dxCuGCX2zTgN4O93K4xQaaWBavkkQg=",
-   1719287
+   "pDbjyy/sXjT8144GiffCmzH7LgjMktTwLnamIeZX+is=",
+   1718763
   ],
   "fonts/inter-cyrillic-ext-wght-normal.woff2": [
    "yhVwYzOaxK1BjyFPOr/tEZsHmKtNN3OGzlyeWnpDXr0=",
@@ -138,8 +145,8 @@
    39279
   ],
   "index.html": [
-   "UAe2Btfn9j3sQn+q/OzGmp+FNGYq+G1grxwjSreVeqU=",
-   65656
+   "i13aS1fOLyEFUtrgnBbytZDaDkCSSgaT3mkadnun+Kg=",
+   66874
   ],
   "licenses/inter-OFL.txt": [
    "Owpfyj0XlCzeiJBpiJ3tu70HXptZmWjIKpX02UTps0U=",
@@ -162,8 +169,8 @@
    14474
   ],
   "paroxysm-adapter.js": [
-   "W/uTjJoseRtC0H4+0FOuhbliH2Ja0ECSR/hOIhPmO2g=",
-   2344
+   "bMmAntzqHe8UrlWn9BiD4GXV2gcRkZ8NtRqJehLJJZI=",
+   3311
   ],
   "paroxysm-ai-settings.js": [
    "lJVpY07lSvm9bifFKTURmUmBA5INxaZ8Ob12HLV/U68=",
@@ -172,6 +179,10 @@
   "paroxysm-ai.js": [
    "n0tJ/wtPktE22pr5AA9AnLMLlAUcYqMHASCfYdJpAaI=",
    58943
+  ],
+  "paroxysm-changelog.js": [
+   "Rzo6mkafTAItCtn68PoiSCTcISkOVKpsRa34Iz/J9zc=",
+   411
   ],
   "paroxysm-cloak.js": [
    "7sOZlEn3dho+06GxuLbApPHwjbvR7ilAMPGaT++ZHhs=",
@@ -194,8 +205,8 @@
    3350
   ],
   "paroxysm.config.js": [
-   "7CeGibb4e2QkhgIqugnswod6VXvNClXRqJrUxhpZBmo=",
-   1266
+   "3l+7nUDv4GN82Z+u1XxqBVkp94Vo9H1VE1rsKtLkAgw=",
+   1260
   ],
   "paroxysm.css": [
    "NW38jGmY1XDRuzxhqN/CW5nTXNhmUbshbpRLfqZTWQ0=",
@@ -223,7 +234,7 @@
   ]
  },
  "sig": {
-  "s": "ISzNLT5l0Sh0Rzyp9EEAJo0gi+7WblFqy3j5GMVjv4mLii3OON8/E1lAZ7lcVBgFptQKE21Kks+lgskN+AqYxQ==",
-  "m": "{\"v\":1,\"seq\":1795485542070,\"ref\":\"1f8e9784680876aa8f5665e50738d20a85928d4e\",\"sw\":[\"controller/controller.sw.js\",\"sw-glue.js\"],\"docs\":[\"assistant.html\",\"games.html\",\"index.html\",\"newtab.html\",\"puter-frame.html\",\"settings.html\"],\"boot\":[\"index.html\",\"paroxysm.css\",\"paroxysm-settings.js\",\"paroxysm.config.js\",\"paroxysm-cloak.js\",\"paroxysm-outer.js\",\"scramjet/scramjet.js\",\"scramjet/scramjet.wasm\",\"controller/controller.api.js\",\"controller/controller.inject.js\",\"paroxysm-adapter.js\",\"epoxy/index.js\",\"paroxysm-transport.js\",\"newtab.html\",\"newtab-bg.js\",\"paroxysm-rise.js\",\"fonts/inter-latin-wght-normal.woff2\",\"assets/paroxysm/paroxysm_darkmode_icon.png\",\"assets/paroxysm/paroxysm_lightmode_icon.png\",\"assets/paroxysm/paroxysm_darkmode_logo.png\",\"assets/paroxysm/paroxysm_lightmode_logo.png\",\"controller/controller.sw.js\",\"sw-glue.js\"],\"warm\":[\"assets/paroxysm/paroxysm_darkmode_favicon.ico\",\"assets/paroxysm/paroxysm_lightmode_favicon.ico\",\"assistant.html\",\"controller/controller-external.mjs\",\"fonts/inter-cyrillic-ext-wght-normal.woff2\",\"fonts/inter-cyrillic-wght-normal.woff2\",\"fonts/inter-greek-wght-normal.woff2\",\"games.html\",\"licenses/inter-OFL.txt\",\"licenses/lucide-ISC.txt\",\"licenses/react-bits-MIT-CommonsClause.txt\",\"paroxysm-ai-settings.js\",\"paroxysm-ai.js\",\"puter-frame.html\",\"settings.html\"],\"files\":{\"assets/paroxysm/paroxysm_darkmode_favicon.ico\":[\"yzP2OkSWk7M+LyRD6NpLteR1IhJ1coHbfYf8nkp0PCo=\",4286],\"assets/paroxysm/paroxysm_darkmode_icon.png\":[\"JQcC8XyTsegB7Rd8iA1UrA2G26DSr8/JLZVWnUUhE2s=\",10626],\"assets/paroxysm/paroxysm_darkmode_logo.png\":[\"Y6wFeHz1rf9F9BchYRID5K6C7CJ6JRF4CwAoyw8ZWC4=\",29483],\"assets/paroxysm/paroxysm_lightmode_favicon.ico\":[\"kUz8g2ZzxTtq8flJhNSpat187f3htWsLg8m9gebXpBQ=\",4286],\"assets/paroxysm/paroxysm_lightmode_icon.png\":[\"Ph2Cp7bAXWzgJ/o5cUwo6RCqrxfOdfMdZryXfdhlf0Q=\",10626],\"assets/paroxysm/paroxysm_lightmode_logo.png\":[\"fnAdBet85Gyn4ajM7qR2pdDTp+izTC92j9eF49lESiU=\",29483],\"assistant.html\":[\"caNdicIpjSW/ds1C1W+wrNtT5DnkjvMfO0ykF1pbNQg=\",54502],\"controller/controller-external.mjs\":[\"l5VqGxdKDBNDhibOEduqedzbIQUVqMq8/66l8/KD088=\",294],\"controller/controller.api.js\":[\"e1Fzmc1t8g722Aia20xyywjlOJTjTWo5rq0JNWNHjqQ=\",25802],\"controller/controller.api.js.map\":[\"MoVT0LftTPgZbnHmSzzSRKCHhevxrIeJBYGF7VCBbtQ=\",103348],\"controller/controller.inject.js\":[\"jMifziAMIMefXj+5YIVV/MngwvU+zK15zJeFW0KWqx8=\",6421],\"controller/controller.inject.js.map\":[\"85yzT6ZBnVnKEgjD4JSI4C+tmg/tF8ZPLf36AqKAg7E=\",24454],\"controller/controller.sw.js\":[\"gFMJclmT0xqOVAwgxXXcwXaobn/fxrnWnM9O6PlMc20=\",4576],\"controller/controller.sw.js.map\":[\"qNG5KvVjfkIJldhmChGeoLecjl3CybkRGD6I2wEj1uM=\",18693],\"epoxy/index.js\":[\"VaxruI0sJ/Q93dxCuGCX2zTgN4O93K4xQaaWBavkkQg=\",1719287],\"fonts/inter-cyrillic-ext-wght-normal.woff2\":[\"yhVwYzOaxK1BjyFPOr/tEZsHmKtNN3OGzlyeWnpDXr0=\",25960],\"fonts/inter-cyrillic-wght-normal.woff2\":[\"cdXuk8wenx1SCjqLZkVt4Yx4edjfCdV/zS6v91/vAHU=\",18748],\"fonts/inter-greek-wght-normal.woff2\":[\"G+NEjikvvwX/4Xb+HkPxNQE9ULHn0yStGlWPYj07tvY=\",18996],\"fonts/inter-latin-wght-normal.woff2\":[\"MQDndehhbNJhG+7PojpCY9cDdYZ4m0PwNSNqLm+9TGI=\",48256],\"games.html\":[\"BmoHyjDfNQhoPQYRVTUfTmCaupYq1kjGnOAUI5AZPzY=\",39279],\"index.html\":[\"UAe2Btfn9j3sQn+q/OzGmp+FNGYq+G1grxwjSreVeqU=\",65656],\"licenses/inter-OFL.txt\":[\"Owpfyj0XlCzeiJBpiJ3tu70HXptZmWjIKpX02UTps0U=\",4477],\"licenses/lucide-ISC.txt\":[\"tJUEe9k6mwaRNREHb1BNq6F9W76z4GUPO7U6QiAynFc=\",3208],\"licenses/react-bits-MIT-CommonsClause.txt\":[\"S90fpZprfVlUvDshPbw05FXGNalLvOz5KTVTeX0PrQI=\",2060],\"newtab-bg.js\":[\"FD5bd+d+b2zkJcd0D/dNc0dzv9A5I1D7MOcs0kFxzO8=\",10834],\"newtab.html\":[\"qdIo1j1Li4iEkVJ9WRe9aCjpa8rWSXGpF31C3PnM8Rg=\",14474],\"paroxysm-adapter.js\":[\"W/uTjJoseRtC0H4+0FOuhbliH2Ja0ECSR/hOIhPmO2g=\",2344],\"paroxysm-ai-settings.js\":[\"lJVpY07lSvm9bifFKTURmUmBA5INxaZ8Ob12HLV/U68=\",13367],\"paroxysm-ai.js\":[\"n0tJ/wtPktE22pr5AA9AnLMLlAUcYqMHASCfYdJpAaI=\",58943],\"paroxysm-cloak.js\":[\"7sOZlEn3dho+06GxuLbApPHwjbvR7ilAMPGaT++ZHhs=\",6527],\"paroxysm-outer.js\":[\"/5OLAS/ejbHXt5Xix7sgK6irA0Hpzm61YkosHGcUxmc=\",807],\"paroxysm-rise.js\":[\"QH4n+QILjQgFBKoIlBtufrZg6xsWGNwxI3aAduj7gx8=\",1163],\"paroxysm-settings.js\":[\"2s9XQLDVUTEklIJC7syty/2JVHTt5ZjSOP9maFoosco=\",7520],\"paroxysm-transport.js\":[\"Weulregqi7dQeH0taC2lvm4cvcrG84zpvB9ylKpIg+4=\",3350],\"paroxysm.config.js\":[\"7CeGibb4e2QkhgIqugnswod6VXvNClXRqJrUxhpZBmo=\",1266],\"paroxysm.css\":[\"NW38jGmY1XDRuzxhqN/CW5nTXNhmUbshbpRLfqZTWQ0=\",39043],\"puter-frame.html\":[\"bmNxioDApeLDZdYxKp+EJuzA00tP9fNjr1TLragTKc0=\",8463],\"scramjet/scramjet.js\":[\"XE18KyrHeO44IWI87Jp5CQkfpTcyfG9v0SMSUks9OLc=\",227493],\"scramjet/scramjet.wasm\":[\"7r/ax0Nej0k5yRCeODT7fzpn58N4D0aj/2H3po3cAc0=\",583429],\"settings.html\":[\"5GUF9blTT8PQCSZhuzYiqVWjNzI7YH0Sj/kNCC+NU8Q=\",29006],\"sw-glue.js\":[\"MmvxU5E8qEIN33Bnq5B3THHF4QsHTs5KGggu2gTj7Po=\",227]}}"
+  "s": "CVXdzBOfIianclIqorH3ps99m8TEk3EMeCWBMiU8zcPTaUXfdokG+3VtsSXNqt7iMi1Jjnqim5oNXnT4+S02zg==",
+  "m": "{\"v\":1,\"seq\":1795496391988,\"ref\":\"20c6d79a84e79e59fc6b7d3c3bf18a29ca9b211b\",\"sw\":[\"controller/controller.sw.js\",\"sw-glue.js\"],\"docs\":[\"assistant.html\",\"changelog.html\",\"games.html\",\"index.html\",\"newtab.html\",\"puter-frame.html\",\"settings.html\"],\"boot\":[\"index.html\",\"paroxysm.css\",\"paroxysm-settings.js\",\"paroxysm.config.js\",\"paroxysm-cloak.js\",\"paroxysm-outer.js\",\"scramjet/scramjet.js\",\"scramjet/scramjet.wasm\",\"controller/controller.api.js\",\"controller/controller.inject.js\",\"paroxysm-adapter.js\",\"epoxy/index.js\",\"paroxysm-transport.js\",\"newtab.html\",\"newtab-bg.js\",\"paroxysm-rise.js\",\"fonts/inter-latin-wght-normal.woff2\",\"assets/paroxysm/paroxysm_darkmode_icon.png\",\"assets/paroxysm/paroxysm_lightmode_icon.png\",\"assets/paroxysm/paroxysm_darkmode_logo.png\",\"assets/paroxysm/paroxysm_lightmode_logo.png\",\"controller/controller.sw.js\",\"sw-glue.js\"],\"warm\":[\"assets/paroxysm/paroxysm_darkmode_favicon.ico\",\"assets/paroxysm/paroxysm_lightmode_favicon.ico\",\"assistant.html\",\"changelog.html\",\"controller/controller-external.mjs\",\"fonts/inter-cyrillic-ext-wght-normal.woff2\",\"fonts/inter-cyrillic-wght-normal.woff2\",\"fonts/inter-greek-wght-normal.woff2\",\"games.html\",\"licenses/inter-OFL.txt\",\"licenses/lucide-ISC.txt\",\"licenses/react-bits-MIT-CommonsClause.txt\",\"paroxysm-ai-settings.js\",\"paroxysm-ai.js\",\"paroxysm-changelog.js\",\"puter-frame.html\",\"settings.html\"],\"files\":{\"assets/paroxysm/paroxysm_darkmode_favicon.ico\":[\"yzP2OkSWk7M+LyRD6NpLteR1IhJ1coHbfYf8nkp0PCo=\",4286],\"assets/paroxysm/paroxysm_darkmode_icon.png\":[\"JQcC8XyTsegB7Rd8iA1UrA2G26DSr8/JLZVWnUUhE2s=\",10626],\"assets/paroxysm/paroxysm_darkmode_logo.png\":[\"Y6wFeHz1rf9F9BchYRID5K6C7CJ6JRF4CwAoyw8ZWC4=\",29483],\"assets/paroxysm/paroxysm_lightmode_favicon.ico\":[\"kUz8g2ZzxTtq8flJhNSpat187f3htWsLg8m9gebXpBQ=\",4286],\"assets/paroxysm/paroxysm_lightmode_icon.png\":[\"Ph2Cp7bAXWzgJ/o5cUwo6RCqrxfOdfMdZryXfdhlf0Q=\",10626],\"assets/paroxysm/paroxysm_lightmode_logo.png\":[\"fnAdBet85Gyn4ajM7qR2pdDTp+izTC92j9eF49lESiU=\",29483],\"assistant.html\":[\"caNdicIpjSW/ds1C1W+wrNtT5DnkjvMfO0ykF1pbNQg=\",54502],\"changelog.html\":[\"SnogajSFfqvE287WVdD0MFnX1BTBY+2HQJ5MyW1OBIg=\",6977],\"controller/controller-external.mjs\":[\"l5VqGxdKDBNDhibOEduqedzbIQUVqMq8/66l8/KD088=\",294],\"controller/controller.api.js\":[\"e1Fzmc1t8g722Aia20xyywjlOJTjTWo5rq0JNWNHjqQ=\",25802],\"controller/controller.api.js.map\":[\"MoVT0LftTPgZbnHmSzzSRKCHhevxrIeJBYGF7VCBbtQ=\",103348],\"controller/controller.inject.js\":[\"jMifziAMIMefXj+5YIVV/MngwvU+zK15zJeFW0KWqx8=\",6421],\"controller/controller.inject.js.map\":[\"85yzT6ZBnVnKEgjD4JSI4C+tmg/tF8ZPLf36AqKAg7E=\",24454],\"controller/controller.sw.js\":[\"gFMJclmT0xqOVAwgxXXcwXaobn/fxrnWnM9O6PlMc20=\",4576],\"controller/controller.sw.js.map\":[\"qNG5KvVjfkIJldhmChGeoLecjl3CybkRGD6I2wEj1uM=\",18693],\"epoxy/index.js\":[\"pDbjyy/sXjT8144GiffCmzH7LgjMktTwLnamIeZX+is=\",1718763],\"fonts/inter-cyrillic-ext-wght-normal.woff2\":[\"yhVwYzOaxK1BjyFPOr/tEZsHmKtNN3OGzlyeWnpDXr0=\",25960],\"fonts/inter-cyrillic-wght-normal.woff2\":[\"cdXuk8wenx1SCjqLZkVt4Yx4edjfCdV/zS6v91/vAHU=\",18748],\"fonts/inter-greek-wght-normal.woff2\":[\"G+NEjikvvwX/4Xb+HkPxNQE9ULHn0yStGlWPYj07tvY=\",18996],\"fonts/inter-latin-wght-normal.woff2\":[\"MQDndehhbNJhG+7PojpCY9cDdYZ4m0PwNSNqLm+9TGI=\",48256],\"games.html\":[\"BmoHyjDfNQhoPQYRVTUfTmCaupYq1kjGnOAUI5AZPzY=\",39279],\"index.html\":[\"i13aS1fOLyEFUtrgnBbytZDaDkCSSgaT3mkadnun+Kg=\",66874],\"licenses/inter-OFL.txt\":[\"Owpfyj0XlCzeiJBpiJ3tu70HXptZmWjIKpX02UTps0U=\",4477],\"licenses/lucide-ISC.txt\":[\"tJUEe9k6mwaRNREHb1BNq6F9W76z4GUPO7U6QiAynFc=\",3208],\"licenses/react-bits-MIT-CommonsClause.txt\":[\"S90fpZprfVlUvDshPbw05FXGNalLvOz5KTVTeX0PrQI=\",2060],\"newtab-bg.js\":[\"FD5bd+d+b2zkJcd0D/dNc0dzv9A5I1D7MOcs0kFxzO8=\",10834],\"newtab.html\":[\"qdIo1j1Li4iEkVJ9WRe9aCjpa8rWSXGpF31C3PnM8Rg=\",14474],\"paroxysm-adapter.js\":[\"bMmAntzqHe8UrlWn9BiD4GXV2gcRkZ8NtRqJehLJJZI=\",3311],\"paroxysm-ai-settings.js\":[\"lJVpY07lSvm9bifFKTURmUmBA5INxaZ8Ob12HLV/U68=\",13367],\"paroxysm-ai.js\":[\"n0tJ/wtPktE22pr5AA9AnLMLlAUcYqMHASCfYdJpAaI=\",58943],\"paroxysm-changelog.js\":[\"Rzo6mkafTAItCtn68PoiSCTcISkOVKpsRa34Iz/J9zc=\",411],\"paroxysm-cloak.js\":[\"7sOZlEn3dho+06GxuLbApPHwjbvR7ilAMPGaT++ZHhs=\",6527],\"paroxysm-outer.js\":[\"/5OLAS/ejbHXt5Xix7sgK6irA0Hpzm61YkosHGcUxmc=\",807],\"paroxysm-rise.js\":[\"QH4n+QILjQgFBKoIlBtufrZg6xsWGNwxI3aAduj7gx8=\",1163],\"paroxysm-settings.js\":[\"2s9XQLDVUTEklIJC7syty/2JVHTt5ZjSOP9maFoosco=\",7520],\"paroxysm-transport.js\":[\"Weulregqi7dQeH0taC2lvm4cvcrG84zpvB9ylKpIg+4=\",3350],\"paroxysm.config.js\":[\"3l+7nUDv4GN82Z+u1XxqBVkp94Vo9H1VE1rsKtLkAgw=\",1260],\"paroxysm.css\":[\"NW38jGmY1XDRuzxhqN/CW5nTXNhmUbshbpRLfqZTWQ0=\",39043],\"puter-frame.html\":[\"bmNxioDApeLDZdYxKp+EJuzA00tP9fNjr1TLragTKc0=\",8463],\"scramjet/scramjet.js\":[\"XE18KyrHeO44IWI87Jp5CQkfpTcyfG9v0SMSUks9OLc=\",227493],\"scramjet/scramjet.wasm\":[\"7r/ax0Nej0k5yRCeODT7fzpn58N4D0aj/2H3po3cAc0=\",583429],\"settings.html\":[\"5GUF9blTT8PQCSZhuzYiqVWjNzI7YH0Sj/kNCC+NU8Q=\",29006],\"sw-glue.js\":[\"MmvxU5E8qEIN33Bnq5B3THHF4QsHTs5KGggu2gTj7Po=\",227]}}"
  }
 }
