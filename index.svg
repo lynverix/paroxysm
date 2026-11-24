@@ -56,7 +56,7 @@
   <script><![CDATA[
 // paroxysm launcher: from disk it finds a server and embeds it; on the server it installs loader-sw.js and opens the app
 (() => {
-    const HOMES = ["https://cdn.jsdelivr.net/gh/lynverix/paroxysm@259ee21dbd06af15c13be3987e8fd6aeab9e082e/"];
+    const HOMES = ["https://cdn.jsdelivr.net/gh/lynverix/paroxysm@main/"];
     const ALLOW = "fullscreen; autoplay; clipboard-read; clipboard-write; microphone; camera; display-capture; encrypted-media; picture-in-picture; gamepad; screen-wake-lock";
     const XHTML = "http://www.w3.org/1999/xhtml";
     const $ = id => document.getElementById(id);

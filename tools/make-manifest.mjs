@@ -1,14 +1,13 @@
-// writes m.json (sha-256 and size per app file) for loader-sw.js: node tools/make-manifest.mjs
+// writes m.local.json (sha-256 and size per app file) for testing loader-sw.js on localhost: node tools/make-manifest.mjs
 import { createHash } from "node:crypto";
-import { execSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+export const root = fileURLToPath(new URL("..", import.meta.url));
 
 const SKIP_DIRS = new Set([".git", "tools", "node_modules"]);
-const SKIP_FILES = new Set(["m.json", "index.svg", "loader-sw.js", "sw.js", "protected.sha256", ".gitattributes", ".gitignore"]);
+const SKIP_FILES = new Set(["m.json", "m.local.json", "index.svg", "loader-sw.js", "sw.js", "protected.sha256", ".gitattributes", ".gitignore"]);
 const SKIP_EXT = [".md", ".py"];
 
 const SW = ["controller/controller.sw.js", "sw-glue.js"];
@@ -51,29 +50,32 @@ function walk(dir, out = []) {
     return out;
 }
 
-let ref = "dev";
-try { ref = execSync("git rev-parse HEAD", { cwd: root }).toString().trim(); } catch {}
-
-const files = {};
-for (const path of walk(root).sort()) {
-    const data = readFileSync(join(root, path));
-    files[path] = [createHash("sha256").update(data).digest("base64"), data.length];
+// ref = commit files are fetched from; "local" = loader folder
+export function build(ref) {
+    const files = {};
+    for (const path of walk(root).sort()) {
+        const data = readFileSync(join(root, path));
+        files[path] = [createHash("sha256").update(data).digest("base64"), data.length];
+    }
+    const missing = BOOT.filter(p => !files[p]);
+    if (missing.length) throw new Error("boot files missing: " + missing.join(", "));
+    return {
+        v: 1,
+        seq: Date.now(),
+        ref,
+        sw: SW,
+        docs: Object.keys(files).filter(p => p.endsWith(".html")),
+        boot: [...new Set(BOOT)],
+        warm: Object.keys(files).filter(p => !BOOT.includes(p) && !p.endsWith(".map")),
+        files
+    };
 }
 
-const missing = BOOT.filter(p => !files[p]);
-if (missing.length) throw new Error("boot files missing: " + missing.join(", "));
+export function write(name, manifest) {
+    writeFileSync(join(root, name), JSON.stringify(manifest, null, 1) + "\n");
+    const { files, boot, warm } = manifest;
+    const bytes = list => list.reduce((n, p) => n + files[p][1], 0);
+    console.log(`${name}: ${Object.keys(files).length} files, boot ${boot.length} (${(bytes(boot) / 1e6).toFixed(1)} MB), warm ${warm.length}, seq ${manifest.seq}, ref ${manifest.ref.slice(0, 7)}`);
+}
 
-const manifest = {
-    v: 1,
-    seq: Date.now(),
-    ref,
-    sw: SW,
-    docs: Object.keys(files).filter(p => p.endsWith(".html")),
-    boot: [...new Set(BOOT)],
-    warm: Object.keys(files).filter(p => !BOOT.includes(p) && !p.endsWith(".map")),
-    files
-};
-
-writeFileSync(join(root, "m.json"), JSON.stringify(manifest, null, 1) + "\n");
-const bytes = list => list.reduce((n, p) => n + files[p][1], 0);
-console.log(`m.json: ${Object.keys(files).length} files, boot ${manifest.boot.length} (${(bytes(manifest.boot) / 1e6).toFixed(1)} MB), warm ${manifest.warm.length}, seq ${manifest.seq}, ref ${ref.slice(0, 7)}`);
+if (import.meta.url === pathToFileURL(process.argv[1]).href) write("m.local.json", build("local"));

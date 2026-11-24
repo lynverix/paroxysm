@@ -1,7 +1,13 @@
 // paroxysm loader worker: verifies m.json files, serves them and runs controller.sw.js + sw-glue.js virtually
 const ORIGIN = location.origin;
 const BASE = new URL(self.registration.scope).pathname;
-const DEV = new URLSearchParams(location.search).has("dev") && ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+const DEV = LOCAL && new URLSearchParams(location.search).has("dev");
+// on jsDelivr scope is /gh/<owner>/<repo>@<branch>/: manifest also from GitHub, files from @<commit>
+const GH = BASE.match(/^\/gh\/([^/]+)\/([^/@]+)@([^/]+)\/$/);
+const HEADS = LOCAL ? ["m.local.json", "m.json"].map(p => urlOf(p))
+    : [urlOf("m.json"), ...(GH ? [`https://raw.githubusercontent.com/${GH[1]}/${GH[2]}/${GH[3]}/m.json`] : [])];
+const COMMIT = /^[0-9a-f]{40}$/;
 // cdn.jsdelivr.net shared by every repo so caches are namespaced by scope
 const NS = "paroxysm-ld:" + BASE + ":";
 const STATE = NS + "state";
@@ -26,7 +32,7 @@ let app = null;
 let lastCheck = 0;
 const inflight = new Map();
 
-const urlOf = path => ORIGIN + BASE + path.split("/").map(encodeURIComponent).join("/");
+function urlOf(path, base = ORIGIN + BASE) { return base + path.split("/").map(encodeURIComponent).join("/"); }
 const typeOf = path => TYPES[path.split(".").pop().toLowerCase()] || "application/octet-stream";
 const cacheOf = m => NS + m.seq;
 const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -43,21 +49,42 @@ async function writeState(key, value) {
     else await c.put(ORIGIN + BASE + "__" + key, new Response(JSON.stringify(value)));
 }
 
-async function fetchManifest() {
-    const r = await fetch(urlOf("m.json"), { cache: "no-store" });
-    if (!r.ok) throw new Error("m.json: HTTP " + r.status);
+async function readManifest(url) {
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok) throw new Error(url + ": HTTP " + r.status);
     const m = await r.json();
-    if (m.v !== 1 || !m.files || !m.seq) throw new Error("m.json: unknown format");
+    if (m.v !== 1 || !m.files || !m.seq) throw new Error(url + ": unknown format");
+    if (!LOCAL && !COMMIT.test(m.ref)) throw new Error(url + ": not a release");
     return m;
 }
 
+// localhost: first manifest that exists; online: newest of all heads since jsDelivr may serve stale @branch copy
+async function fetchManifest() {
+    if (LOCAL) {
+        for (const url of HEADS) { try { return await readManifest(url); } catch {} }
+        throw new Error("no m.local.json or m.json found");
+    }
+    const found = (await Promise.allSettled(HEADS.map(readManifest))).filter(r => r.status === "fulfilled").map(r => r.value);
+    if (!found.length) throw new Error("no manifest could be read");
+    return found.reduce((a, b) => b.seq > a.seq ? b : a);
+}
+
+// release files come from their commit which never changes; own folder is fallback
+const basesOf = m => [...(GH && COMMIT.test(m.ref) ? [`${ORIGIN}/gh/${GH[1]}/${GH[2]}@${m.ref}/`] : []), ORIGIN + BASE];
+
 async function download(m, path, cache) {
-    const entry = m.files[path];
-    const r = await fetch(urlOf(path), { cache: "no-store" });
-    if (!r.ok) throw new Error(path + ": HTTP " + r.status);
-    const data = await r.arrayBuffer();
-    if (b64(await crypto.subtle.digest("SHA-256", data)) !== entry[0]) throw new Error(path + " failed its sha-256 check");
-    await cache.put(urlOf(path), new Response(data, { headers: { "content-type": typeOf(path) } }));
+    let error;
+    for (const base of basesOf(m)) {
+        try {
+            const r = await fetch(urlOf(path, base), { cache: "no-store" });
+            if (!r.ok) throw new Error(path + ": HTTP " + r.status);
+            const data = await r.arrayBuffer();
+            if (b64(await crypto.subtle.digest("SHA-256", data)) !== m.files[path][0]) throw new Error(path + " failed its sha-256 check");
+            await cache.put(urlOf(path), new Response(data, { headers: { "content-type": typeOf(path) } }));
+            return;
+        } catch (err) { error = err; }
+    }
+    throw error;
 }
 
 async function file(m, path) {
@@ -99,7 +126,7 @@ async function refresh() {
     try {
         const m = await fetchManifest();
         const next = await readState("next");
-        if (m.seq === manifest?.seq || m.seq === next?.seq) return;
+        if (m.seq <= (manifest?.seq ?? 0) || m.seq === next?.seq) return;
         await each(m.boot, 4, p => file(m, p));
         if (next) await caches.delete(cacheOf(next));
         await writeState("next", m);
