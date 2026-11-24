@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+  <title>paroxysm</title>
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <div xmlns="http://www.w3.org/1999/xhtml" id="root">
+      <style>
+        #root {
+          --accent: #ae72df;
+          --bg: color-mix(in srgb, var(--accent) 4.5%, #000);
+          --surface: color-mix(in srgb, var(--accent) 12%, #000);
+          --text: color-mix(in srgb, var(--accent) 8%, #f4f4f5);
+          --text-2: color-mix(in srgb, var(--accent) 10%, #a1a1aa);
+          position: relative;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+          margin: 0;
+          background: var(--bg);
+          color: var(--text);
+          font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        .load {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          transition: opacity .3s ease;
+        }
+        .load.gone { opacity: 0; pointer-events: none; }
+        .mark { font-size: 34px; font-weight: 600; letter-spacing: -.02em; }
+        .logo { width: 240px; height: auto; display: none; }
+        .logo.on { display: block; }
+        .logo.on + .mark { display: none; }
+        .status { color: var(--text-2); min-height: 21px; text-align: center; max-width: 420px; padding: 0 24px; }
+        .track { width: 240px; height: 6px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+        .track.off { visibility: hidden; }
+        .fill { width: 0; height: 100%; border-radius: 999px; background: var(--accent); transition: width .2s ease; }
+        .btn { display: none; height: 32px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--accent); color: #000; font: inherit; font-weight: 500; cursor: pointer; }
+        .btn.on { display: inline-block; }
+        .app { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; visibility: hidden; background: var(--bg); }
+        .app.on { visibility: visible; }
+        @media (prefers-reduced-motion: reduce) { .load, .fill { transition: none; } }
+      </style>
+      <div class="load" id="load">
+        <img class="logo" id="logo" alt="paroxysm" />
+        <div class="mark">paroxysm</div>
+        <div class="status" id="status"></div>
+        <div class="track" id="track"><div class="fill" id="fill"></div></div>
+        <button class="btn" id="btn" type="button"></button>
+      </div>
+    </div>
+  </foreignObject>
+  <script><![CDATA[
+// paroxysm launcher: from disk it finds a server and embeds it; on the server it installs loader-sw.js and opens the app
+(() => {
+    const HOMES = ["https://cdn.jsdelivr.net/gh/lynverix/paroxysm@main/"];
+    const ALLOW = "fullscreen; autoplay; clipboard-read; clipboard-write; microphone; camera; display-capture; encrypted-media; picture-in-picture; gamepad; screen-wake-lock";
+    const XHTML = "http://www.w3.org/1999/xhtml";
+    const $ = id => document.getElementById(id);
+    const hash = new URLSearchParams(location.hash.slice(1));
+    const query = new URLSearchParams(location.search);
+    const framed = window.parent !== window;
+    // outer page is file:// with origin "null" so no narrower target exists
+    const tell = msg => { if (framed) parent.postMessage(msg, "*"); };
+
+    const show = text => { $("status").textContent = text; };
+    const bar = f => { $("track").classList.remove("off"); $("fill").style.width = Math.round(Math.min(1, f) * 100) + "%"; };
+    const button = (label, fn) => { const b = $("btn"); b.textContent = label; b.onclick = fn; b.classList.add("on"); };
+    const fail = (text, label = "Try again", fn = () => location.reload()) => {
+        show(text);
+        $("track").classList.add("off");
+        button(label, fn);
+        tell({ ld: "error", text });
+    };
+    const logo = base => {
+        const img = $("logo");
+        img.onload = () => img.classList.add("on");
+        img.src = base + "assets/paroxysm/paroxysm_darkmode_logo.png";
+    };
+    const setIcon = href => {
+        document.querySelectorAll("link[rel~=icon]").forEach(l => l.remove());
+        const link = document.createElementNS(XHTML, "link");
+        link.setAttribute("rel", "icon");
+        link.setAttribute("href", href);
+        document.documentElement.append(link);
+    };
+    $("track").classList.add("off");
+
+    // one mirror every 1.5 s; first to answer wins and the rest are cancelled
+    function race(homes) {
+        return new Promise((resolve, reject) => {
+            let left = homes.length, won = false;
+            const aborts = [];
+            homes.forEach((home, i) => setTimeout(() => {
+                if (won) return;
+                const ctl = new AbortController();
+                aborts.push(ctl);
+                const timer = setTimeout(() => ctl.abort(), 6000);
+                fetch(home + "index.svg", { cache: "no-store", signal: ctl.signal })
+                    .then(r => {
+                        if (!r.ok) throw new Error("HTTP " + r.status);
+                        if (won) return;
+                        won = true;
+                        aborts.forEach(a => a !== ctl && a.abort());
+                        resolve(home);
+                    })
+                    .catch(err => {
+                        console.warn("[paroxysm] server did not answer:", home, err.message);
+                        if (--left === 0 && !won) reject(new Error("no server answered"));
+                    })
+                    .finally(() => clearTimeout(timer));
+            }, i * 1500));
+        });
+    }
+
+    async function outer() {
+        const homes = hash.get("home") ? [hash.get("home")] : HOMES;
+        show("Finding a server…");
+        let home;
+        try { home = await race(homes); }
+        catch { return fail("Couldn't reach a paroxysm server. Check your connection and try again."); }
+        setIcon(home + "assets/paroxysm/paroxysm_darkmode_favicon.ico");
+        logo(home);
+        const direct = () => location.replace(home + "index.svg?ld=0" + (hash.has("nosw") ? "&nosw=1" : ""));
+        if (!navigator.serviceWorker) return direct();
+        show("Connecting…");
+        const frame = document.createElementNS(XHTML, "iframe");
+        frame.className = "app";
+        frame.setAttribute("allow", ALLOW);
+        frame.setAttribute("src", home + "index.svg" + (hash.has("nosw") ? "#nosw" : ""));
+        let heard = false;
+        setTimeout(() => {
+            if (heard) return;
+            show("This is taking longer than usual.");
+            button("Open directly", direct);
+        }, 20000);
+        addEventListener("message", e => {
+            const d = e.data;
+            if (e.source !== frame.contentWindow || typeof d?.ld !== "string") return;
+            heard = true;
+            if (d.ld === "status") show(String(d.text));
+            else if (d.ld === "progress") { bar(d.done / d.total); show(`Downloading paroxysm… ${d.done} of ${d.total}`); }
+            else if (d.ld === "error") fail(String(d.text));
+            else if (d.ld === "nosw") { show("Opening paroxysm directly…"); direct(); }
+            else if (d.ld === "ready") { frame.classList.add("on"); $("load").classList.add("gone"); }
+            else if (d.ld === "title" && typeof d.title === "string") document.title = d.title.slice(0, 200) || "paroxysm";
+            else if (d.ld === "icon" && /^(https?:|data:image\/)/.test(d.href)) setIcon(d.href);
+        });
+        $("root").append(frame);
+    }
+
+    function liveServer() {
+        const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
+        while (walker.nextNode()) if (walker.currentNode.data.includes("Code injected by live-server")) return true;
+        return false;
+    }
+
+    async function inner() {
+        const ld0 = query.get("ld") === "0";
+        const say = text => { show(text); tell({ ld: "status", text }); };
+        const noWorker = () => {
+            if (framed) { show("Opening paroxysm directly…"); tell({ ld: "nosw" }); }
+            else fail(ld0 ? "This browser won't run paroxysm's service worker here, so paroxysm can't start." : "This browser has service workers turned off, so paroxysm can't start.");
+        };
+        logo("");
+        if (hash.has("nosw") || query.has("nosw")) return noWorker();
+        const sw = navigator.serviceWorker;
+        if (!sw) return noWorker();
+        say("Starting…");
+        sw.addEventListener("message", e => {
+            if (e.data?.ld !== "progress") return;
+            bar(e.data.done / e.data.total);
+            show(`Downloading paroxysm… ${e.data.done} of ${e.data.total}`);
+            tell(e.data);
+        });
+        sw.startMessages();
+        const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+        const dev = local && (query.has("dev") || liveServer()) ? "?dev=1" : "";
+        let reg;
+        try { reg = await sw.register("loader-sw.js" + dev, { scope: "./", updateViaCache: "none" }); }
+        catch (err) { console.error("[paroxysm] service worker failed:", err); return noWorker(); }
+        const worker = reg.installing || reg.waiting;
+        if (worker && !reg.active) {
+            say("Downloading paroxysm…");
+            const ok = await new Promise(resolve => {
+                const check = () => { if (worker.state === "activated") resolve(true); else if (worker.state === "redundant") resolve(false); };
+                worker.addEventListener("statechange", check);
+                check();
+            });
+            if (!ok) return fail("paroxysm couldn't install its files. Try again in a moment.");
+        }
+        await sw.ready;
+        say("Opening paroxysm…");
+        location.replace("index.html" + location.search);
+    }
+
+    const start = /^https?:$/.test(location.protocol) ? inner : outer;
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
+    else start();
+})();
+  ]]></script>
+</svg>

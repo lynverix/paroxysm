@@ -1,7 +1,7 @@
 {
  "v": 1,
- "seq": 1795478985718,
- "ref": "e1636f4cebf6f3ecbb0b4cbb1edebc92126033ee",
+ "seq": 1795479581142,
+ "ref": "de52d5b82958b99d2a2819bad178c50530c61c84",
  "sw": [
   "controller/controller.sw.js",
   "sw-glue.js"
@@ -20,6 +20,7 @@
   "paroxysm-settings.js",
   "paroxysm.config.js",
   "paroxysm-cloak.js",
+  "paroxysm-outer.js",
   "scramjet/scramjet.js",
   "scramjet/scramjet.wasm",
   "controller/controller.api.js",
@@ -137,8 +138,8 @@
    39279
   ],
   "index.html": [
-   "46jZpmF3z4uAjy62caQsv8bAsxSDg6T7sE71imzNHoM=",
-   65610
+   "UAe2Btfn9j3sQn+q/OzGmp+FNGYq+G1grxwjSreVeqU=",
+   65656
   ],
   "licenses/inter-OFL.txt": [
    "Owpfyj0XlCzeiJBpiJ3tu70HXptZmWjIKpX02UTps0U=",
@@ -165,8 +166,8 @@
    2344
   ],
   "paroxysm-ai-settings.js": [
-   "CIHpjsD9YW+IeaEQYdFuBRS65ArSaZ/A9azdTscSAlU=",
-   13204
+   "lJVpY07lSvm9bifFKTURmUmBA5INxaZ8Ob12HLV/U68=",
+   13367
   ],
   "paroxysm-ai.js": [
    "n0tJ/wtPktE22pr5AA9AnLMLlAUcYqMHASCfYdJpAaI=",
@@ -175,6 +176,10 @@
   "paroxysm-cloak.js": [
    "7sOZlEn3dho+06GxuLbApPHwjbvR7ilAMPGaT++ZHhs=",
    6527
+  ],
+  "paroxysm-outer.js": [
+   "/5OLAS/ejbHXt5Xix7sgK6irA0Hpzm61YkosHGcUxmc=",
+   807
   ],
   "paroxysm-rise.js": [
    "QH4n+QILjQgFBKoIlBtufrZg6xsWGNwxI3aAduj7gx8=",

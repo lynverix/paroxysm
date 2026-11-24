@@ -168,10 +168,16 @@ async function respond(e, url) {
     }
 }
 
+// index.svg is not controlled yet while installing so include uncontrolled pages
+async function notify(msg) {
+    for (const c of await self.clients.matchAll({ includeUncontrolled: true, type: "window" })) c.postMessage(msg);
+}
+
 self.addEventListener("install", e => e.waitUntil((async () => {
     if (!DEV) {
         const m = await fetchManifest();
-        await each(m.boot, 4, p => file(m, p));
+        let done = 0;
+        await each(m.boot, 4, async p => { await file(m, p); notify({ ld: "progress", done: ++done, total: m.boot.length }); });
         await writeState("next", m);
         log("installed build", m.seq, "(" + m.boot.length + " files checked)");
     }

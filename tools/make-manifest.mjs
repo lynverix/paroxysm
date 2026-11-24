@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 
 const SKIP_DIRS = new Set([".git", "tools", "node_modules"]);
-const SKIP_FILES = new Set(["m.json", "loader-sw.js", "sw.js", "protected.sha256", ".gitattributes", ".gitignore"]);
+const SKIP_FILES = new Set(["m.json", "index.svg", "loader-sw.js", "sw.js", "protected.sha256", ".gitattributes", ".gitignore"]);
 const SKIP_EXT = [".md", ".py"];
 
 const SW = ["controller/controller.sw.js", "sw-glue.js"];
@@ -20,6 +20,7 @@ const BOOT = [
     "paroxysm-settings.js",
     "paroxysm.config.js",
     "paroxysm-cloak.js",
+    "paroxysm-outer.js",
     "scramjet/scramjet.js",
     "scramjet/scramjet.wasm",
     "controller/controller.api.js",

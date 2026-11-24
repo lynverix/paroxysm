@@ -145,7 +145,7 @@
         };
         const keyBox = h("details", { class: "ais-hidden" },
             h("summary", {}, h("span", { text: "Hidden" }), h("span", { class: "ais-hint", text: "Needs an API key" })),
-            keyRow("gemini", "Use your own free Google key to unlock Gemma 4 and the Gemini models, with image support. It's saved in this browser only."),
+            keyRow("gemini", "Use your own free Google key to unlock Gemma 4 and the Gemini models, with image support. It's saved in this browser."),
             keyRow("deepseek", "Unlocks DeepSeek V4.1 Flash, which thinks before it answers and can read images. It isn't free, but it's very cheap."));
         if (focusProvider === "gemini" || focusProvider === "deepseek") keyBox.open = true;
         const proxySwitch = h("button", { class: "switch", role: "switch", "aria-checked": String(!!s.viaProxy), "aria-label": "Send AI requests through the proxy" });
@@ -191,7 +191,7 @@
             section({ title: "Custom instructions", desc: "Added to every chat. Handy for telling it how you like answers written.", body: instr }),
             section({ title: "Today", body: usage }),
             section({ title: "Delete all chats", desc: "Removes every saved chat from this browser.", side: deleteBtn }),
-            section({ title: "Privacy", desc: "Your prompts leave your browser. Gemini's free tier may use them to improve Google's products, Quick sends them to a third-party service and Puter passes them on to the model's provider. Don't send passwords or personal details." })
+            section({ title: "Privacy", desc: "Your prompts leave your browser. Gemini's free tier may use them to improve Google's products, Quick sends them to a third-party service and Puter passes them on to the model's provider. Don't send passwords or personal details. Your keys and Puter sign-in are saved in this browser, where some other web apps opened from downloaded files could read them, so only use keys you can easily replace." })
         ];
     }
 
