@@ -14,6 +14,8 @@ python -m http.server 8080
 
 then open `http://localhost:8080/`. VS Code Live Server also works.
 
+The registered service worker is `loader-sw.js`. It only serves files whose SHA-256 matches `m.json`, so after changing any file run `node tools/make-manifest.mjs` (Node 20 or newer, no packages). On localhost, adding `?dev` to the address (or using Live Server, which is detected automatically because it changes every HTML file) loads files straight from the server without checks.
+
 ## Layout
 
 | Path | What it is |
@@ -28,7 +30,8 @@ then open `http://localhost:8080/`. VS Code Live Server also works.
 | `paroxysm.config.js` | Settings you edit: the encoded wisp server list, the version and the credit strings (developers, game source, AI provider, extensions, UI inspiration) |
 | `encode_wisp.py` | Turns a text file of wss:// URLs into the encoded entries for `paroxysm.config.js` |
 | `paroxysm-cloak.js` | Tab disguise, panic key and character masking |
-| `paroxysm-adapter.js`, `paroxysm-sw.js`, `sw-glue.js` | Let paroxysm run from any folder (the site root or a jsDelivr-style path such as `/gh/<owner>/<repo>@<ref>/`): the adapter points the proxy engine at the folder the page is served from and registers `paroxysm-sw.js` instead of `sw.js`; the worker loads the controller and the fetch glue with relative paths |
+| `paroxysm-adapter.js`, `sw-glue.js` | Let paroxysm run from any folder (the site root or a jsDelivr-style path such as `/gh/<owner>/<repo>@<ref>/`): the adapter points the proxy engine at the folder the page is served from and registers `loader-sw.js` instead of `sw.js`; `sw-glue.js` is mirage's fetch glue without `importScripts` |
+| `loader-sw.js`, `m.json`, `tools/make-manifest.mjs` | The service worker: it downloads the files listed in `m.json`, checks each one's SHA-256, serves them from its cache and runs the Scramjet controller's worker code inside itself. `make-manifest.mjs` writes `m.json` |
 | `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (epoxy/index.js is not modified) |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
 | `fonts/`, `assets/` | Inter (variable: latin, cyrillic, cyrillic-ext and greek subsets); logo and icons live in `assets/paroxysm/` |

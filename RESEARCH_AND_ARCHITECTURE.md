@@ -101,7 +101,7 @@ The registered worker (`v7m.js`) is a loader and package manager. The "actual" a
 
 **Protected (byte-for-byte unchanged):** everything in `scramjet/`, `controller/`, `epoxy/`, and the proxy-facing logic of `index.html`'s script: `register`, `probeWisp`, `new EpoxyTransport`, `transport.init()`, `new Controller({...})`, `controller.wait()`, `createFrame`, `frame.go`.
 
-**New files that wrap it (SVG phase; [revised 2026-11-23] `paroxysm-adapter.js` and `sw-glue.js` were built in M5, together with a plain `paroxysm-sw.js` that M6's loader replaces):**
+**New files that wrap it (SVG phase; [revised 2026-11-23] `paroxysm-adapter.js` and `sw-glue.js` were built in M5, together with a plain `paroxysm-sw.js` that M6's loader replaced (deleted after M6); `loader-sw.js`, `m.json` and `tools/make-manifest.mjs` were built in M6):**
 - **`loader-sw.js`** (own implementation of section 5): the registered worker.
 - **`sw-glue.js`**: the five lines from mirage's `sw.js` minus `importScripts`. The manifest's `sw` becomes a list: `controller/controller.sw.js`, then `sw-glue.js`, evaluated in one function body (so `$scramjetController` is visible to the glue). No concatenation step and no edit to `controller.sw.js`.
 - **`paroxysm-adapter.js`**, loaded after `controller.api.js` and before the inline script, does two things: it sets `$scramjetController.config.{prefix, scramjetPath, injectPath, wasmPath}` from the SW scope (the `Controller` constructor deep-merges this exported object, and upstream's own `packages/bootstrap` uses the same pattern); and it wraps `navigator.serviceWorker.register` so mirage's `register("/sw.js")` registers the loader instead.
