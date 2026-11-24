@@ -55,7 +55,9 @@ Check the protected files at any time with `python verify_protected.py`.
 
 ## Publishing a release
 
-Commit your changes, then run `node tools/release.mjs` (add `--dry-run` to only see what it would do). It checks that the working tree is clean, `main` is up to date and the protected files are unchanged, writes `m.json` pointing at the current commit, commits and pushes it, and asks jsDelivr to refresh its `@main` copies. Files are always downloaded from that exact commit, so they can't be stale; `m.json` itself is read from jsDelivr and GitHub and the newest one wins.
+Releases are signed. Once, run `node tools/keygen.mjs`: it writes the private key to `%USERPROFILE%\.paroxysm\signing-key.json` (keep a backup, never commit it) and prints the public key, which goes into `KEYS` in `loader-sw.js`. The service worker refuses unsigned, tampered or older manifests.
+
+Commit your changes, then run `node tools/release.mjs` (add `--dry-run` to only see what it would do). It checks that the working tree is clean, `main` is up to date and the protected files are unchanged, writes `m.json` pointing at the current commit, commits and pushes it, and asks jsDelivr to refresh its `@main` copies. Files are always downloaded from that exact commit, so they can't be stale; `m.json` itself is read from jsDelivr and GitHub and the newest valid one wins. jsDelivr can take hours to serve a new `loader-sw.js` or `index.svg` from `@main`, so keep those two backward compatible. `index.svg` tries `cdn.jsdelivr.net` first, then `fastly.jsdelivr.net` and `gcore.jsdelivr.net` if it is blocked (each keeps its own settings).
 
 ## Configuration
 

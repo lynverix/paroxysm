@@ -188,7 +188,7 @@ The SVG stays around 10–20 KB. Embedding the wasm would not help because the a
 3. **Shared origin.** Everything on `cdn.jsdelivr.net` shares one origin, so storage and SW registrations are visible to any other script-capable page on it. Fern's app page unregisters other workers it finds. paroxysm should never enumerate registrations, should namespace storage, and should treat this origin as untrusted for secrets.
 4. **Scope and prefix.** Navigations to proxied URLs must be inside the SW scope; hence the scope-relative `config`.
 5. **Idle worker restarts** (section 7).
-6. **Unsigned manifest** until ECDSA lands: hashes protect files only if the manifest is trusted. Interim mitigation: pin by commit; first release from the user's own repo only.
+6. **[revised 2026-11-23] Signed since M9:** releases are signed with ECDSA P-256 and the loader refuses unsigned, tampered or older manifests; `loader-sw.js` itself still comes from the repository, so signing protects the manifest channel (CDN, GitHub raw, mirrors), not a takeover of the repository. Original note: **Unsigned manifest** until ECDSA lands: hashes protect files only if the manifest is trusted. Interim mitigation: pin by commit; first release from the user's own repo only.
 7. **WISP availability.** Without a reachable WISP server the proxy does not work at all. **[revised]** paroxysm now tries an ordered list of endpoints, so one dead endpoint is survivable.
 8. **Takedown risk.** jsDelivr's acceptable-use policy requires content to conform to the policies of the source host; mirrors can be removed.
 9. **Third-party storage partitioning.** **[verified 2026-11-23]** Chrome registers and keeps the worker in the iframe; its storage persists across reloads and restarts, is invisible to top-level jsDelivr pages and is shared by every local `file://` page (one top-level site); blocked third-party cookies do not stop it. **[revised]** This now matters: the iframe-first design runs the app in a cross-site iframe under a `file://` outer document, so its storage and Service Worker are partitioned and the partition is keyed to the outer document. Whether Chrome registers and keeps the worker in that setup is the first thing the SVG-phase spike must test.
@@ -215,7 +215,7 @@ The SVG stays around 10–20 KB. Embedding the wasm would not help because the a
 | 6 | **Loader SW** (own implementation): manifest v1 with hashes, one mirror (localhost), `boot`/`warm`, virtual `fetch` and `message` dispatch | Checklist passes via the loader; kill the SW in DevTools mid-session and tabs recover |
 | 7 | **SVG loader:** `file://` detection, mirror race, **iframe-first embedding** with the full-page redirect only as the `nosw` fallback, `ld=0` guard, progress and error states | Open the downloaded `index.svg` from disk, reach the app inside the iframe |
 | 8 | **Release tooling:** `make-manifest.mjs`, GitHub repo, commit-pinned `ref`, jsDelivr purge | Same flow against the real jsDelivr URL |
-| 9 | **Hardening:** ECDSA signing and `seq` anti-rollback, more mirrors, update flow, optional WISP-HTTP fallback | Tampered manifest is rejected |
+| 9 | **Hardening:** ECDSA signing and `seq` anti-rollback, more mirrors, update flow, optional WISP-HTTP fallback | Tampered manifest is rejected. **Built 2026-11-23:** signing, rollback, `fastly`/`gcore` hostnames (the user's choice; the rest not chosen) |
 
 ## 14. Decisions (resolved)
 
