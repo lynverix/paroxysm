@@ -2,7 +2,7 @@
 
 A web proxy interface built on [Scramjet](https://github.com/MercuryWorkshop/scramjet) with an Epoxy transport over WISP. paroxysm is the continuation of mirage.
 
-Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22, unchanged since). The single-file `index.svg` launcher works, with signed releases and automatic updates (milestones M4 to M9, version 0.8.0-alpha). Next: fixing YouTube (B10), which most likely needs a rebuilt Epoxy transport.
+Status: the interface is finished and the baseline checklist has been re-run on it. The proxy engine is Scramjet 2.1.0 with controller 0.1.0 and Epoxy transport 3.0.2 (installed as one set on 2026-11-22); `epoxy/index.js` was rebuilt on 2026-11-23 with a larger HTTP/2 header limit so YouTube works. The single-file `index.svg` launcher works, with signed releases and automatic updates (milestones M4 to M9, version 0.8.0-alpha).
 
 ## Open it
 
@@ -38,7 +38,8 @@ The registered service worker is `loader-sw.js`. It only serves files whose SHA-
 | `index.svg` | The launcher: opened from disk it races its servers and embeds the winner in a full-window frame; on the server it installs `loader-sw.js` with a progress bar and opens the app. A full-page redirect (`?ld=0`) is only the fallback when the frame can't run a service worker |
 | `paroxysm-outer.js` | Inside the launcher's frame: tells the launcher when paroxysm is ready and copies the tab title and icon to the real browser tab (so the tab disguise shows) |
 | `loader-sw.js`, `m.json`, `tools/make-manifest.mjs`, `tools/release.mjs` | The service worker: it downloads the files listed in `m.json` from the release's commit, checks each one's SHA-256, serves them from its cache and runs the Scramjet controller's worker code inside itself. `make-manifest.mjs` writes the local test manifest `m.local.json`; `release.mjs` writes `m.json` and publishes |
-| `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (epoxy/index.js is not modified) |
+| `tools/epoxy/` | How `epoxy/index.js` is built: a Docker image, a build script and two small patches to epoxy-tls (Epoxy's HTTP/2 header limit raised from 16 KiB to Chrome's 256 KiB, without which YouTube fails) |
+| `paroxysm-transport.js` | Adapter around the Epoxy transport: after a wisp connection drop it reconnects and retries the request (it works from outside epoxy/index.js) |
 | `paroxysm-settings.js` | User settings (accent, theme, search engine, sidebar order, cloaking, panic key, wisp choice), stored in localStorage |
 | `fonts/`, `assets/` | Inter (variable: latin, cyrillic, cyrillic-ext and greek subsets); logo and icons live in `assets/paroxysm/` |
 | `scramjet/`, `controller/`, `epoxy/`, `sw.js` | Proxy engine. Protected: do not edit (`sw.js` is kept but no longer registered) |
@@ -50,7 +51,7 @@ Check the protected files at any time with `python verify_protected.py`.
 ## Troubleshooting
 
 - A proxied tab shows a white page saying `Cannot GET /~/sj/...`: that is the local server answering because the service worker did not route the request (it can happen after a hard reload, Ctrl+Shift+R, followed by a worker restart). paroxysm now repairs this on its own: a page the worker does not control reloads itself once, and a proxied page that loaded unserved is retried twice. If it still happens, open the console and look for lines starting with `[paroxysm]`; "Bypass for network" in DevTools > Application > Service workers must be off.
-- YouTube pages (`youtube.com`, `youtu.be`) fail with a `Hyper client ... Http2 ... PROTOCOL_ERROR` error. That is a limit of the Epoxy transport, not something paroxysm can fix; other sites, including Discord and Google, work.
+- YouTube used to fail with a `Hyper client ... Http2 ... PROTOCOL_ERROR` error; paroxysm's own Epoxy build fixes that. If it comes back after an engine update, `epoxy/index.js` was probably replaced with the npm file: rebuild it with `tools/epoxy/` instead.
 - Menu > Reconnect only replaces the connection to the wisp server; Menu > Find best server picks another server.
 
 ## Publishing a release

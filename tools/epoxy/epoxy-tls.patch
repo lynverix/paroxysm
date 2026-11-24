@@ -1,0 +1,36 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 15715bf..17af8b2 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -21,3 +21,6 @@ module_name_repetitions = "allow"
+ struct_excessive_bools = "allow"
+ missing_fields_in_debug = "allow"
+ case_sensitive_file_extension_comparisons = "allow"
++
++[patch."https://github.com/r58Playz/hyper-util-wasm"]
++hyper-util-wasm = { path = "../hyper-util-wasm" }
+diff --git a/client/package.json b/client/package.json
+index 9794659..c655214 100644
+--- a/client/package.json
++++ b/client/package.json
+@@ -1,6 +1,6 @@
+ {
+ 	"name": "@mercuryworkshop/epoxy-tls",
+-	"version": "2.1.20-1",
++	"version": "2.1.20-1+paroxysm.1",
+ 	"description": "A wasm library for using raw encrypted tls/ssl/tcp/udp/https/websocket streams on the browser",
+ 	"scripts": {
+ 		"build": "bash build.sh",
+diff --git a/client/src/lib.rs b/client/src/lib.rs
+index 4f49e1c..cc8c399 100644
+--- a/client/src/lib.rs
++++ b/client/src/lib.rs
+@@ -448,6 +448,8 @@ impl EpoxyClient {
+ 
+ 		#[cfg(feature = "full")]
+ 		builder.http2_max_concurrent_reset_streams(10); // set back to default, on wasm it is 0
++		#[cfg(feature = "full")]
++		builder.http2_max_header_list_size(256 * 1024); // chrome limit; hyper default 16 KiB rejects youtube
+ 		let client = builder.build(service);
+ 
+ 		Ok(Self {

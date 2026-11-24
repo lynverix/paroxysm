@@ -1,0 +1,19 @@
+diff --git a/src/client/legacy/client.rs b/src/client/legacy/client.rs
+index d32b407..9182188 100644
+--- a/src/client/legacy/client.rs
++++ b/src/client/legacy/client.rs
+@@ -1402,6 +1402,14 @@ impl Builder {
+         self
+     }
+ 
++    /// Sets the max size of received header frames for HTTP2.
++    #[cfg(feature = "http2")]
++    #[cfg_attr(docsrs, doc(cfg(feature = "http2")))]
++    pub fn http2_max_header_list_size(&mut self, max: u32) -> &mut Self {
++        self.h2_builder.max_header_list_size(max);
++        self
++    }
++
+     /// Provide a timer to be used for h2
+     ///
+     /// See the documentation of [`h2::client::Builder::timer`] for more
